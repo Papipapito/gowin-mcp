@@ -1,5 +1,9 @@
 # gowin-mcp
 
+> **Beta.** Working and in daily use, but verified against a narrow slice of Gowin
+> output so far — see [Beta status](#beta-status) before trusting a number that
+> matters. Bug reports with a sample report attached are very welcome.
+
 An MCP server that turns Gowin EDA build reports into structured data.
 
 Gowin EDA writes everything you need after a place & route — resource usage, achieved
@@ -130,9 +134,36 @@ A GW5A place & route takes minutes, which does not fit an MCP request, and drivi
 long builds through a tool call hides their output. Keep building with `gw_sh`,
 `make`, or the Gowin GUI as you already do — then point this at the results.
 
+## Beta status
+
+What has actually been exercised:
+
+| | Verified |
+|---|---|
+| Tool versions | V1.9.11.03 Education, V1.9.9 Beta-4 Education |
+| Devices | GW5AT-60 (Tang Console 60K), GW2AR-18 (Tang Nano 20K) |
+| Host | Windows 11 |
+
+Known gaps, in rough order of how likely they are to bite you:
+
+- **Only the proprietary Gowin EDA flow.** Output from the open-source chain
+  (yosys / nextpnr-himbaechel / apicula) is a completely different format and is not
+  parsed at all. If you build with `nextpnr`, this server has nothing to read.
+- **GW1N is untested.** It should work — the report layout looks family-independent —
+  but nobody has run it.
+- Report headers have already been seen to drift between releases (`PnR Version`
+  became `Tool Version` around 1.9.11). Other fields may drift the same way on
+  versions not listed above.
+- Only tested against English-language reports.
+- Power and pin reports (`*.power.html`, `*.pin.html`) are written by the tool but
+  not read yet.
+
+Failures should be visible rather than silent: fields that do not parse come back
+absent instead of wrong. If you get a missing or implausible number, please open an
+issue with the offending `.rpt.txt` or `_tr_content.html` attached.
+
 ## Notes
 
-- Verified against Gowin EDA V1.9.11.03 Education output for GW5AT-60 and GW2AR-18C.
 - Setup and hold violations are taken from the Total Negative Slack summary rather
   than the path tables, because the path tables are capped by `-max_paths` at report
   time and would under-report a design with many failures.
