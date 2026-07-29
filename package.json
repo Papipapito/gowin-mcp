@@ -1,0 +1,41 @@
+{
+  "name": "gowin-mcp",
+  "version": "0.1.0",
+  "description": "MCP server that turns Gowin EDA build reports into structured data: resource usage, fMax per clock, timing violations, and build-to-build comparison.",
+  "type": "module",
+  "bin": {
+    "gowin-mcp": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node dist/index.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "keywords": [
+    "mcp",
+    "gowin",
+    "fpga",
+    "tang",
+    "verilog",
+    "timing",
+    "eda"
+  ],
+  "author": "Papipapito",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}
