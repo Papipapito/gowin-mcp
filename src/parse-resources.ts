@@ -9,7 +9,10 @@ import type { BuildInfo, ResourceReport, ResourceRow } from './types.js';
  */
 
 const HEADER_KEYS: Record<string, keyof BuildInfo> = {
+  // Gowin renamed this field: releases up to ~1.9.9 write "PnR Version",
+  // later ones write "Tool Version". Both mean the same thing.
   'Tool Version': 'toolVersion',
+  'PnR Version': 'toolVersion',
   'Part Number': 'partNumber',
   Device: 'device',
   'Device Version': 'deviceVersion',
