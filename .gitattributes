@@ -1,0 +1,2 @@
+# Fixtures are byte-exact slices of tool output; never rewrite their line endings.
+tests/fixtures/** -text

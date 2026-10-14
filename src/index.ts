@@ -23,7 +23,12 @@ import {
   renderViolations,
 } from './render.js';
 
-export const VERSION = '0.1.0-beta.1';
+import { createRequire } from 'node:module';
+
+/** Single source of truth: the version in package.json. */
+export const VERSION: string = (
+  createRequire(import.meta.url)('../package.json') as { version: string }
+).version;
 
 /** Every tool only reads report files already on disk. */
 const READ_ONLY = {

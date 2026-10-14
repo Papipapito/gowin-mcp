@@ -1,7 +1,7 @@
 {
   "name": "gowin-mcp",
-  "version": "0.1.0-beta.1",
-  "description": "MCP server that turns Gowin EDA build reports into structured data: resource usage, fMax per clock, timing violations, and build-to-build comparison.",
+  "version": "0.2.0",
+  "description": "MCP server that turns Gowin EDA build reports into structured data: resource usage, fMax per clock, timing violations with a pass/fail/unknown gate, pin assignment, synthesis/PnR warnings, and build-to-build comparison.",
   "type": "module",
   "bin": {
     "gowin-mcp": "dist/index.js"
@@ -39,5 +39,13 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Papipapito/gowin-mcp.git"
+  },
+  "homepage": "https://github.com/Papipapito/gowin-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/Papipapito/gowin-mcp/issues"
   }
 }
