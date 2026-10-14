@@ -1,7 +1,7 @@
 import { explainViolation, formatFmax, formatResource, timingVerdict } from './analyze.js';
 import type { LoadedBuild } from './analyze.js';
 import type { BuildDiff } from './compare.js';
-import type { TimingPath } from './types.js';
+import type { PackagePin, PinReport, PortPin, TimingPath } from './types.js';
 
 /** Compact text renderings shared by the tools. JSON output bypasses these. */
 
@@ -147,5 +147,44 @@ export function renderDiff(diff: BuildDiff): string {
   for (const v of persisting) out.push(`  still  ${v.kind} ${v.clock} ${v.amount}${v.unit}`);
 
   out.push('', diff.safe ? 'VERDICT: no regression.' : 'VERDICT: REGRESSION — see above.');
+  return out.join('\n');
+}
+
+function pinLine(p: PortPin | PackagePin, label: string): string {
+  const attrs = [
+    p.dir,
+    p.ioType,
+    p.pull ? `pull ${p.pull}` : '',
+    p.drive && p.drive !== 'NA' ? `drive ${p.drive}` : '',
+    p.site,
+    p.cfg ? `cfg ${p.cfg}` : '',
+    'diffPair' in p && p.diffPair ? `pair ${p.diffPair}` : '',
+    'constrained' in p && !p.constrained ? 'UNCONSTRAINED' : '',
+  ]
+    .filter(Boolean)
+    .join('  ');
+  const loc = `pin ${p.pin}${p.bank != null ? `/${p.bank}` : ''}`;
+  return `  ${label.padEnd(22)} ${loc.padEnd(11)} ${attrs}`;
+}
+
+export function renderPins(
+  r: PinReport,
+  opts: { ports: PortPin[]; unused: PackagePin[]; includeClocks: boolean },
+): string {
+  const out: string[] = [];
+  out.push(
+    `${opts.ports.length} of ${r.ports.length} ports; ${r.packagePins.length} package pins, ${r.unusedPins} unused`,
+  );
+  for (const p of opts.ports) out.push(pinLine(p, p.port));
+  if (opts.unused.length) {
+    out.push('', 'Unused package pins');
+    for (const p of opts.unused) out.push(pinLine(p, '(free)'));
+  }
+  if (opts.includeClocks && r.clocks.length) {
+    out.push('', 'Global clock routing');
+    for (const c of r.clocks) {
+      out.push(`  ${c.signal.padEnd(40)} ${c.type.padEnd(8)} ${c.location ?? ''}`);
+    }
+  }
   return out.join('\n');
 }

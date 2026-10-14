@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { discoverBuilds, resolveBuild } from './discover.js';
 import { checkBuild, loadBuild, summarize } from './analyze.js';
 import { readBuildHeader } from './parse-resources.js';
+import { parsePinReport, portMatcher } from './parse-pins.js';
 import type { LoadedBuild } from './analyze.js';
 import { compareBuilds } from './compare.js';
 import * as S from './schemas.js';
@@ -15,6 +16,7 @@ import {
   renderFmax,
   renderPathSummary,
   renderPathTable,
+  renderPins,
   renderResources,
   renderViolations,
 } from './render.js';
@@ -254,6 +256,51 @@ export function createServer(): McpServer {
     guarded(({ before, beforeName, after, afterName, format }) => {
       const diff = compareBuilds(must(before, beforeName), must(after, afterName));
       return result(diff, renderDiff(diff), format);
+    }),
+  );
+
+  server.registerTool(
+    'gowin_pins',
+    {
+      title: 'Pin assignment',
+      description:
+        'Pin assignment as placed: every top-level port with its package pin, bank, I/O standard, drive, pull mode and dual-function role, plus the global clock routing. Filter by port name (substring or glob).',
+      inputSchema: {
+        path: S.PathArg,
+        name: S.NameArg,
+        format: S.FormatArg,
+        port: z
+          .string()
+          .optional()
+          .describe('Only ports whose name contains this text, or matches it as a glob (* and ?). Case-insensitive.'),
+        includeUnused: z
+          .boolean()
+          .optional()
+          .describe('Also list package pins with no signal on them. Default false.'),
+        includeClocks: z
+          .boolean()
+          .optional()
+          .describe('Include the global clock routing table. Default true.'),
+      },
+      outputSchema: S.PinReport.shape,
+      annotations: READ_ONLY,
+    },
+    guarded(({ path, name, format, port, includeUnused, includeClocks }) => {
+      const found = resolveBuild(path, name);
+      if (!found) throw new Error(`No Gowin build found at ${path}.`);
+      const r = parsePinReport(found.rptTxt);
+      const match = portMatcher(port);
+      const ports = r.ports.filter((p) => match(p.port));
+      const unused = includeUnused ? r.packagePins.filter((p) => !p.signal) : [];
+      const text = renderPins(r, { ports, unused, includeClocks: includeClocks !== false });
+      // The structured result is filtered the same way so both views agree.
+      const structured = {
+        ...r,
+        ports,
+        packagePins: includeUnused ? r.packagePins : r.packagePins.filter((p) => p.signal && match(p.signal)),
+        clocks: includeClocks !== false ? r.clocks : [],
+      };
+      return result(structured, text, format);
     }),
   );
 

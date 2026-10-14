@@ -167,3 +167,57 @@ export interface CheckResult {
     Pick<CheckThresholds, 'maxUtilization' | 'minFmaxMarginMhz'>;
   thresholdFailures: ThresholdFailure[];
 }
+
+/** One row of "Global Clock Signals": how a clock net was routed. */
+export interface ClockSignal {
+  signal: string;
+  /** PRIMARY (global buffer), HCLK (regional), LW (long wire). */
+  type: string;
+  /** Quadrants or bank pair, e.g. "TR TL BR BL" or "BANK2_BANK3_HCLK0". */
+  location?: string;
+}
+
+/** I/O attributes shared by the port and package-pin tables. Absent = "-" in the report. */
+export interface IoAttributes {
+  /** in / out / io. */
+  dir?: string;
+  /** Physical I/O site, e.g. IOL7[A]. */
+  site?: string;
+  /** Dual-function role of the pin (MSPI, GCLK, PLL feedback...). Absent on V1.9.9 reports. */
+  cfg?: string;
+  ioType?: string;
+  drive?: string;
+  pull?: string;
+  pciClamp?: string;
+  hysteresis?: string;
+  openDrain?: string;
+  vref?: string;
+  singleResistor?: string;
+  diffResistor?: string;
+  bankVccio?: string;
+}
+
+/** One top-level port and the pin it ended up on ("Pinout by Port Name"). */
+export interface PortPin extends IoAttributes {
+  port: string;
+  /** Package pin, e.g. "4" or "p73" (the embedded-SDRAM pins of a GW2AR). */
+  pin: string;
+  bank?: string;
+  diffPair?: string;
+  /** True when the location came from the .cst rather than the placer. */
+  constrained: boolean;
+}
+
+/** One physical pin of the package ("All Package Pins"); `signal` is absent when unused. */
+export interface PackagePin extends IoAttributes {
+  pin: string;
+  bank?: string;
+  signal?: string;
+}
+
+export interface PinReport {
+  clocks: ClockSignal[];
+  ports: PortPin[];
+  packagePins: PackagePin[];
+  unusedPins: number;
+}

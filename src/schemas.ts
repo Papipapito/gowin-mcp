@@ -210,3 +210,48 @@ export const BuildDiff = z.object({
   safe: z.boolean(),
   notes: z.array(z.string()),
 });
+
+export const ClockSignal = z.object({
+  signal: z.string(),
+  type: z.string(),
+  location: z.string().optional(),
+});
+
+const IoAttributes = {
+  dir: z.string().optional(),
+  site: z.string().optional(),
+  cfg: z.string().optional(),
+  ioType: z.string().optional(),
+  drive: z.string().optional(),
+  pull: z.string().optional(),
+  pciClamp: z.string().optional(),
+  hysteresis: z.string().optional(),
+  openDrain: z.string().optional(),
+  vref: z.string().optional(),
+  singleResistor: z.string().optional(),
+  diffResistor: z.string().optional(),
+  bankVccio: z.string().optional(),
+};
+
+export const PortPin = z.object({
+  port: z.string(),
+  pin: z.string(),
+  bank: z.string().optional(),
+  diffPair: z.string().optional(),
+  constrained: z.boolean(),
+  ...IoAttributes,
+});
+
+export const PackagePin = z.object({
+  pin: z.string(),
+  bank: z.string().optional(),
+  signal: z.string().optional(),
+  ...IoAttributes,
+});
+
+export const PinReport = z.object({
+  clocks: z.array(ClockSignal),
+  ports: z.array(PortPin),
+  packagePins: z.array(PackagePin),
+  unusedPins: z.number(),
+});
