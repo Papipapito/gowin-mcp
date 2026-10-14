@@ -1,4 +1,4 @@
-import { explainViolation, formatFmax, formatResource, timingVerdict } from './analyze.js';
+import { explainViolation, formatFmax, formatResource, timingVerdict, verdictOptions } from './analyze.js';
 import type { LoadedBuild } from './analyze.js';
 import type { BuildDiff } from './compare.js';
 import type {
@@ -33,6 +33,7 @@ export function buildHeader(b: LoadedBuild): string[] {
     );
   }
   if (!b.timing) lines.push('(no timing report found — resources only)');
+  else if (b.timing.format === 'text') lines.push(`(timing read from ${b.found.name}.tr — no _tr_content.html)`);
   return lines;
 }
 
@@ -69,7 +70,7 @@ export function renderResources(b: LoadedBuild, includeBanks: boolean): string {
 
 /** `violations` overrides the verdict's list, e.g. after gowin_check ignored some. */
 export function renderViolations(b: LoadedBuild, violations?: Violation[]): string {
-  const verdict = timingVerdict(b.timing);
+  const verdict = timingVerdict(b.timing, verdictOptions(b));
   const v = violations ?? verdict.violations;
   if (verdict.status === 'unknown') return `\nTiming: UNKNOWN — ${verdict.reason}`;
   if (!v.length) return '\nTiming: CLEAN — no violations';
@@ -102,19 +103,24 @@ export function renderFmax(b: LoadedBuild): string {
   return out.join('\n');
 }
 
+function pathLine(p: TimingPath): string {
+  const edges = p.fromEdge && p.toEdge && p.fromEdge !== p.toEdge ? ` [${p.fromEdge}->${p.toEdge}]` : '';
+  return (
+    `  ${String(p.slack).padStart(9)} ns  ${p.fromClock}->${p.toClock}${edges}  ${p.from} -> ${p.to}` +
+    (p.dataDelay != null ? `  (delay ${p.dataDelay}, relation ${p.relation})` : '')
+  );
+}
+
+/** The worst `max` paths of a table; `total` says how many the report holds. */
 export function renderPathTable(label: string, paths: TimingPath[], max: number): string[] {
-  if (!paths.length) return [];
-  const out = ['', label];
-  for (const p of [...paths].sort((x, y) => x.slack - y.slack).slice(0, max)) {
-    out.push(
-      `  ${String(p.slack).padStart(9)} ns  ${p.fromClock}->${p.toClock}  ${p.from} -> ${p.to}` +
-        (p.dataDelay != null ? `  (delay ${p.dataDelay}, relation ${p.relation})` : ''),
-    );
-  }
+  if (!paths.length || max <= 0) return [];
+  const shown = [...paths].sort((x, y) => x.slack - y.slack).slice(0, max);
+  const out = ['', `${label}${shown.length < paths.length ? ` (${shown.length} of ${paths.length})` : ''}`];
+  for (const p of shown) out.push(pathLine(p));
   return out;
 }
 
-/** One line per async-reset check: these rarely fail, so a count and the worst slack is enough. */
+/** One line per table: a count and the worst slack is enough for a summary. */
 export function renderPathSummary(label: string, paths: TimingPath[]): string[] {
   if (!paths.length) return [];
   const worst = [...paths].sort((x, y) => x.slack - y.slack)[0];
@@ -129,6 +135,12 @@ export function renderDiff(diff: BuildDiff): string {
   out.push(`${diff.before.name} (${diff.before.createdTime ?? '?'})`);
   out.push(`  ->  ${diff.after.name} (${diff.after.createdTime ?? '?'})`);
   for (const n of diff.notes) out.push(`  ! ${n}`);
+  for (const [label, s] of [
+    ['before', diff.before],
+    ['after', diff.after],
+  ] as const) {
+    if (s.note) out.push(`  ! ${label}: ${s.note}`);
+  }
 
   const moved = diff.resources.filter((r) => r.delta != null && r.delta !== 0);
   out.push('', moved.length ? 'Resource changes' : 'Resources: unchanged');
@@ -153,15 +165,24 @@ export function renderDiff(diff: BuildDiff): string {
   }
 
   const { introduced, fixed, persisting } = diff.violations;
-  out.push(
-    '',
-    `Violations: ${introduced.length} introduced, ${fixed.length} fixed, ${persisting.length} persisting`,
-  );
-  for (const v of introduced) out.push(`  NEW    ${v.kind} ${v.clock} ${v.amount}${v.unit}`);
-  for (const v of fixed) out.push(`  FIXED  ${v.kind} ${v.clock} (was ${v.amount}${v.unit})`);
-  for (const v of persisting) out.push(`  still  ${v.kind} ${v.clock} ${v.amount}${v.unit}`);
+  if (diff.comparable) {
+    out.push(
+      '',
+      `Violations: ${introduced.length} introduced, ${fixed.length} fixed, ${persisting.length} persisting`,
+    );
+    for (const v of introduced) out.push(`  NEW    ${v.kind} ${v.clock} ${v.amount}${v.unit}`);
+    for (const v of fixed) out.push(`  FIXED  ${v.kind} ${v.clock} (was ${v.amount}${v.unit})`);
+    for (const v of persisting) out.push(`  still  ${v.kind} ${v.clock} ${v.amount}${v.unit}`);
+  } else {
+    out.push('', 'Violations: not classified (different devices)');
+  }
 
-  out.push('', diff.safe ? 'VERDICT: no regression.' : 'VERDICT: REGRESSION — see above.');
+  if (diff.sameBitstream != null) {
+    out.push(`Bitstream: ${diff.sameBitstream ? 'identical body' : 'different'}`);
+  }
+
+  if (diff.safe === null) out.push('', 'VERDICT: not comparable — see the notes above.');
+  else out.push('', diff.safe ? 'VERDICT: no regression.' : 'VERDICT: REGRESSION — see above.');
   return out.join('\n');
 }
 
@@ -184,11 +205,11 @@ function pinLine(p: PortPin | PackagePin, label: string): string {
 
 export function renderPins(
   r: PinReport,
-  opts: { ports: PortPin[]; unused: PackagePin[]; includeClocks: boolean },
+  opts: { ports: PortPin[]; unused: PackagePin[]; includeClocks: boolean; totalPorts: number; totalPins: number },
 ): string {
   const out: string[] = [];
   out.push(
-    `${opts.ports.length} of ${r.ports.length} ports; ${r.packagePins.length} package pins, ${r.unusedPins} unused`,
+    `${opts.ports.length} of ${opts.totalPorts} ports; ${opts.totalPins} package pins, ${r.unusedPins} unused`,
   );
   for (const p of opts.ports) out.push(pinLine(p, p.port));
   if (opts.unused.length) {

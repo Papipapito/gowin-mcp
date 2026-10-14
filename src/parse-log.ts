@@ -98,14 +98,24 @@ export function parseLogText(text: string, stage: LogStage): LogMessage[] {
   return out;
 }
 
+/**
+ * Quoted names in a message. A single quote only opens a string at the start
+ * or after whitespace/punctuation: the apostrophes of "Can't calculate
+ * clocks' relationship" (TA1117, CK3000) are not quotes, and a 32'b0 literal
+ * inside a double-quoted name (EX0200) must not end it.
+ */
+const QUOTED = /"([^"]*)"|(^|[\s(:,=])'([^']*)'/g;
+
 /** `'u_div/CLKOUT.default_gen_clk' was determined to be a clock but was not created.` -> the quoted net. */
-function quoted(message: string): string[] {
-  return [...message.matchAll(/['"]([^'"]+)['"]/g)].map((m) => m[1]);
+export function quoted(message: string): string[] {
+  return [...message.matchAll(QUOTED)].map((m) => m[1] ?? m[3]).filter((s) => s);
 }
 
 /** Collapses the message into a shape shared by every occurrence of the code. */
-function pattern(message: string): string {
-  return message.replace(/['"][^'"]*['"]/g, 'X').replace(/\b\d+\b/g, 'N');
+export function pattern(message: string): string {
+  return message
+    .replace(QUOTED, (_m: string, _dq: string | undefined, before: string | undefined) => `${before ?? ''}X`)
+    .replace(/\b\d+\b/g, 'N');
 }
 
 function shortFile(file: string | undefined, line: number | undefined): string | undefined {

@@ -4,9 +4,9 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 
 import { discoverBuilds, resolveBuild } from './discover.js';
-import { checkBuild, loadBuild, summarize } from './analyze.js';
+import { checkBuild, loadBuild, siblingNote, summarize } from './analyze.js';
 import { readBuildHeader } from './parse-resources.js';
-import { parsePinReport, portMatcher } from './parse-pins.js';
+import { filterPinReport, parsePinReport } from './parse-pins.js';
 import { readWarnings } from './parse-log.js';
 import type { LoadedBuild } from './analyze.js';
 import { compareBuilds } from './compare.js';
@@ -49,20 +49,23 @@ function must(path: string, name?: string): LoadedBuild {
 }
 
 /**
- * Builds a tool result carrying both renderings: `structuredContent` for
- * clients that read the output schema, and a text block that is either the
- * compact rendering or, when `format: "json"` was asked for, the JSON itself.
+ * Builds a tool result. The default is the compact text rendering and
+ * nothing else: clients that understand `structuredContent` show it in
+ * place of the text, so it is only attached — together with the same JSON
+ * as text — when `format: "json"` asked for the full data.
  */
 function result<T extends object>(
   structured: T,
   textRendering: string,
   format: 'text' | 'json' | undefined,
 ) {
-  const text = format === 'json' ? JSON.stringify(structured, null, 2) : textRendering;
-  return {
-    content: [{ type: 'text' as const, text }],
-    structuredContent: structured as Record<string, unknown>,
-  };
+  if (format === 'json') {
+    return {
+      content: [{ type: 'text' as const, text: JSON.stringify(structured, null, 2) }],
+      structuredContent: structured as Record<string, unknown>,
+    };
+  }
+  return { content: [{ type: 'text' as const, text: textRendering }] };
 }
 
 function errorResult(err: unknown) {
@@ -97,7 +100,6 @@ export function createServer(): McpServer {
         maxDepth: z.number().optional().describe('Search depth, default 8.'),
         format: S.FormatArg,
       },
-      outputSchema: { builds: z.array(S.ListedBuild) },
       annotations: READ_ONLY,
     },
     guarded(({ root, maxDepth, format }) => {
@@ -114,7 +116,7 @@ export function createServer(): McpServer {
       });
       const lines = builds.map(
         (b) =>
-          `${b.mtime.slice(0, 16).replace('T', ' ')}  ${(b.device ?? '').padEnd(10)}  ${b.name.padEnd(20)}  ${b.projectDir}${b.trContent ? '' : '  [no timing]'}`,
+          `${b.mtime.slice(0, 16).replace('T', ' ')}  ${(b.device ?? '').padEnd(10)}  ${b.name.padEnd(20)}  ${b.projectDir}${b.trContent ? '' : b.tr ? '  [timing from .tr]' : '  [no timing]'}`,
       );
       const text = builds.length
         ? `${builds.length} build(s):\n${lines.join('\n')}`
@@ -128,17 +130,21 @@ export function createServer(): McpServer {
     {
       title: 'Build summary',
       description:
-        'Headline report for one build: device, resource usage, fMax per clock, and every timing violation. Start here.',
+        'Headline report for one build: device, resource usage, fMax per clock, every timing violation, the bitstream header (.fs) and what the .sdc declares. Start here.',
       inputSchema: { path: S.PathArg, name: S.NameArg, format: S.FormatArg },
-      outputSchema: S.BuildSummary.shape,
       annotations: READ_ONLY,
     },
     guarded(({ path, name, format }) => {
       const b = must(path, name);
-      const text = [buildHeader(b).join('\n'), renderResources(b, false), renderViolations(b), renderFmax(b)]
-        .filter(Boolean)
-        .join('\n');
-      return result(summarize(b), text, format);
+      const s = summarize(b);
+      const lines = [buildHeader(b).join('\n')];
+      if (s.bitstream) {
+        lines.push(
+          `Bitstream: ${s.bitstream.checksum ?? '?'} checksum, body sha256 ${s.bitstream.bodySha256.slice(0, 12)}… (${s.bitstream.createdTime ?? '?'})`,
+        );
+      }
+      lines.push(renderResources(b, false), renderViolations(b), renderFmax(b));
+      return result(s, lines.filter(Boolean).join('\n'), format);
     }),
   );
 
@@ -157,13 +163,12 @@ export function createServer(): McpServer {
           .optional()
           .describe('Include the I/O bank and clock resource tables. Default true.'),
       },
-      outputSchema: S.ResourceReport.shape,
       annotations: READ_ONLY,
     },
     guarded(({ path, name, format, includeBanks }) => {
       const b = must(path, name);
       const text = [buildHeader(b).join('\n'), renderResources(b, includeBanks !== false)].join('\n');
-      return result(b.resources, text, format);
+      return result({ ...b.resources, ...siblingNote(b.found) }, text, format);
     }),
   );
 
@@ -172,31 +177,64 @@ export function createServer(): McpServer {
     {
       title: 'Timing detail',
       description:
-        'Timing detail for one build: fMax per clock, total negative slack, the worst setup/hold paths with their endpoints, and a summary of the recovery/removal checks.',
+        'Timing detail for one build: fMax per clock, total negative slack, the worst setup/hold paths with their endpoints, and a summary of the recovery/removal checks. The path tables are trimmed to the worst maxPaths entries in both renderings; paths="all" returns every parsed path, paths="none" only the summaries plus worstSetup/worstHold.',
       inputSchema: {
         path: S.PathArg,
         name: S.NameArg,
         format: S.FormatArg,
-        maxPaths: z.number().optional().describe('Worst paths to show, default 10.'),
+        maxPaths: z.number().optional().describe('Worst paths to keep per table (text and JSON), default 10.'),
+        paths: z
+          .enum(['worst', 'all', 'none'])
+          .optional()
+          .describe('worst (default): the maxPaths worst of each table; all: every parsed path; none: no path tables.'),
       },
-      outputSchema: { hasTiming: z.boolean(), timing: S.TimingReport.optional() },
       annotations: READ_ONLY,
     },
-    guarded(({ path, name, format, maxPaths }) => {
+    guarded(({ path, name, format, maxPaths, paths }) => {
       const b = must(path, name);
       if (!b.timing) {
-        return result({ hasTiming: false }, 'No timing report for this build.', format);
+        return result({ hasTiming: false, ...siblingNote(b.found) }, 'No timing report for this build.', format);
       }
-      const max = maxPaths ?? 10;
+      const mode = paths ?? 'worst';
+      const max = mode === 'none' ? 0 : mode === 'all' ? Number.POSITIVE_INFINITY : (maxPaths ?? 10);
+      const t = b.timing;
+      const cut = (list: typeof t.setupPaths) => (max === Number.POSITIVE_INFINITY ? list : list.slice(0, max));
+      const trimmed = {
+        ...t,
+        setupPaths: cut(t.setupPaths),
+        holdPaths: cut(t.holdPaths),
+        recoveryPaths: cut(t.recoveryPaths),
+        removalPaths: cut(t.removalPaths),
+      };
       const out = [buildHeader(b).join('\n'), renderFmax(b), renderViolations(b)];
-      out.push(...renderPathTable('Worst setup paths', b.timing.setupPaths, max));
-      out.push(...renderPathTable('Worst hold paths', b.timing.holdPaths, max));
+      if (mode === 'none') {
+        if (t.worstSetup) out.push('', `Worst setup: ${t.worstSetup.slack} ns  ${t.worstSetup.fromClock}->${t.worstSetup.toClock}  ${t.worstSetup.from} -> ${t.worstSetup.to}`);
+        if (t.worstHold) out.push(`Worst hold:  ${t.worstHold.slack} ns  ${t.worstHold.fromClock}->${t.worstHold.toClock}  ${t.worstHold.from} -> ${t.worstHold.to}`);
+      } else {
+        out.push(...renderPathTable('Worst setup paths', t.setupPaths, max));
+        out.push(...renderPathTable('Worst hold paths', t.holdPaths, max));
+      }
       const async = [
-        ...renderPathSummary('Recovery', b.timing.recoveryPaths),
-        ...renderPathSummary('Removal', b.timing.removalPaths),
+        ...renderPathSummary('Recovery', t.recoveryPaths),
+        ...renderPathSummary('Removal', t.removalPaths),
       ];
       if (async.length) out.push('', ...async);
-      return result({ hasTiming: true, timing: b.timing }, out.filter(Boolean).join('\n'), format);
+      const structured = {
+        hasTiming: true,
+        timing: trimmed,
+        paths: {
+          mode,
+          maxPaths: mode === 'worst' ? max : undefined,
+          parsed: {
+            setup: t.setupPaths.length,
+            hold: t.holdPaths.length,
+            recovery: t.recoveryPaths.length,
+            removal: t.removalPaths.length,
+          },
+        },
+        ...siblingNote(b.found),
+      };
+      return result(structured, out.filter(Boolean).join('\n'), format);
     }),
   );
 
@@ -205,7 +243,7 @@ export function createServer(): McpServer {
     {
       title: 'Build gate',
       description:
-        'Pass/fail/unknown gate for CI. Lists timing violations with the offending path for each, plus optional thresholds on utilization and fMax margin. Negative paths between clock domains count as violations even though Gowin leaves them out of the TNS summary (set ignoreCrossDomain when they are declared false paths). "unknown" means timing could not be verified (no _tr_content.html, unrecognised report, or no clocks analysed) and is never a pass.',
+        'Pass/fail/unknown gate for CI. Lists timing violations with the offending path for each, plus optional thresholds on utilization and fMax margin. Negative paths between clock domains count as violations even though Gowin leaves them out of the TNS summary (set ignoreCrossDomain when they are declared false paths). A clock whose fMax misses its constraint while its setup TNS is 0 is reported as an fMax-only violation with the .sdc evidence (multicycle / half-cycle relations); waive it per clock with fmaxWaivers. "unknown" means timing could not be verified (no _tr_content.html or .tr, unrecognised report, or no clocks analysed) and is never a pass.',
       inputSchema: {
         path: S.PathArg,
         name: S.NameArg,
@@ -215,7 +253,7 @@ export function createServer(): McpServer {
           .min(0)
           .max(100)
           .optional()
-          .describe('Fail when CLS, Logic or BSRAM utilization exceeds this percentage.'),
+          .describe('Fail when CLS, Logic or BSRAM utilization exceeds this percentage (recomputed from used/available, not the rounded column).'),
         minFmaxMarginMhz: z
           .number()
           .optional()
@@ -230,13 +268,18 @@ export function createServer(): McpServer {
           .describe(
             'Default false. Set true when the paths between clock domains are declared false paths (set_false_path / set_clock_groups in the .sdc): their negative slack is then listed but does not fail the gate.',
           ),
+        fmaxWaivers: z
+          .array(z.string())
+          .optional()
+          .describe(
+            'Clock names (or globs with * and ?) whose fMax-only violation is waived: fMax below the constraint with a setup TNS of 0, which is how Gowin reports a clock covered by set_multicycle_path or half-cycle paths. Listed under ignoredViolations; a TNS violation on the clock is never waived.',
+          ),
       },
-      outputSchema: S.CheckResult.shape,
       annotations: READ_ONLY,
     },
-    guarded(({ path, name, format, maxUtilization, minFmaxMarginMhz, failOnMissingTiming, ignoreCrossDomain }) => {
+    guarded(({ path, name, format, maxUtilization, minFmaxMarginMhz, failOnMissingTiming, ignoreCrossDomain, fmaxWaivers }) => {
       const b = must(path, name);
-      const r = checkBuild(b, { maxUtilization, minFmaxMarginMhz, failOnMissingTiming, ignoreCrossDomain });
+      const r = checkBuild(b, { maxUtilization, minFmaxMarginMhz, failOnMissingTiming, ignoreCrossDomain, fmaxWaivers });
       const head = `${r.status.toUpperCase()} — ${r.reasons[0]}`;
       const lines = [head];
       if (r.status === 'unknown' && r.ok) lines.push('ok=true (gate accepted the build on resources)');
@@ -245,10 +288,11 @@ export function createServer(): McpServer {
         for (const t of r.thresholdFailures) lines.push(`  threshold ${t.kind.padEnd(11)} ${t.detail}`);
       }
       for (const v of r.ignoredViolations) {
-        lines.push(`  ignored ${v.kind} ${v.clock} ${v.amount} ns (at least ${v.pathCount} path${v.pathCount === 1 ? '' : 's'})`);
+        const amt = v.unit === 'ns' ? `${v.amount} ns (at least ${v.pathCount} path${v.pathCount === 1 ? '' : 's'})` : `${v.amount} MHz`;
+        lines.push(`  ignored ${v.kind} ${v.clock} ${amt}`);
       }
       for (const n of r.notes) lines.push(`  note: ${n}`);
-      if (b.found.siblings?.length) lines.push(buildHeader(b).find((l) => l.startsWith('Note:')) ?? '');
+      if (r.note) lines.push(`  note: ${r.note}`);
       return result(r, lines.filter(Boolean).join('\n'), format);
     }),
   );
@@ -258,7 +302,7 @@ export function createServer(): McpServer {
     {
       title: 'Compare builds',
       description:
-        'Diff two builds: resource deltas, fMax change per clock, and which violations were introduced, fixed, or persist. Use this to see what a change actually cost.',
+        'Diff two builds: resource deltas, fMax change per clock, which violations were introduced, fixed, or persist, and whether the two .fs bitstreams have the same body. Use this to see what a change actually cost. Builds on different devices are reported but not classified (safe is null).',
       inputSchema: {
         before: S.PathArg.describe('Baseline build path.'),
         beforeName: S.NameArg,
@@ -266,7 +310,6 @@ export function createServer(): McpServer {
         afterName: S.NameArg,
         format: S.FormatArg,
       },
-      outputSchema: S.BuildDiff.shape,
       annotations: READ_ONLY,
     },
     guarded(({ before, beforeName, after, afterName, format }) => {
@@ -288,7 +331,7 @@ export function createServer(): McpServer {
         port: z
           .string()
           .optional()
-          .describe('Only ports whose name contains this text, or matches it as a glob (* and ?). Case-insensitive.'),
+          .describe('Only ports whose name contains this text, or matches it as a glob (* and ?). Case-insensitive. Package pins are filtered by their signal the same way.'),
         includeUnused: z
           .boolean()
           .optional()
@@ -298,25 +341,21 @@ export function createServer(): McpServer {
           .optional()
           .describe('Include the global clock routing table. Default true.'),
       },
-      outputSchema: S.PinReport.shape,
       annotations: READ_ONLY,
     },
     guarded(({ path, name, format, port, includeUnused, includeClocks }) => {
       const found = resolveBuild(path, name);
       if (!found) throw new Error(`No Gowin build found at ${path}.`);
-      const r = parsePinReport(found.rptTxt);
-      const match = portMatcher(port);
-      const ports = r.ports.filter((p) => match(p.port));
-      const unused = includeUnused ? r.packagePins.filter((p) => !p.signal) : [];
-      const text = renderPins(r, { ports, unused, includeClocks: includeClocks !== false });
-      // The structured result is filtered the same way so both views agree.
-      const structured = {
-        ...r,
-        ports,
-        packagePins: includeUnused ? r.packagePins : r.packagePins.filter((p) => p.signal && match(p.signal)),
-        clocks: includeClocks !== false ? r.clocks : [],
-      };
-      return result(structured, text, format);
+      const full = parsePinReport(found.rptTxt);
+      const { report, unused } = filterPinReport(full, { port, includeUnused, includeClocks });
+      const text = renderPins(report, {
+        ports: report.ports,
+        unused,
+        includeClocks: includeClocks !== false,
+        totalPorts: full.ports.length,
+        totalPins: full.packagePins.length,
+      });
+      return result({ ...report, ...siblingNote(found) }, text, format);
     }),
   );
 
@@ -335,7 +374,6 @@ export function createServer(): McpServer {
         code: z.string().optional().describe('Only this diagnostic code, e.g. TA1132.'),
         maxGroups: z.number().optional().describe('Codes to show in the text rendering, default 15.'),
       },
-      outputSchema: S.WarningsReport.shape,
       annotations: READ_ONLY,
     },
     guarded(({ path, name, format, stage, level, code, maxGroups }) => {
@@ -349,9 +387,10 @@ export function createServer(): McpServer {
           (!level || level === 'all' || (level === 'error' ? g.level === 'ERROR' : g.level !== 'INFO')) &&
           (!code || g.code.toLowerCase() === code.toLowerCase()),
       );
-      const structured = { ...r, groups: filtered };
-      const text = renderWarnings(structured, filtered.slice(0, maxGroups ?? 15), found.name);
-      return result(structured, text, format);
+      const structured = { ...r, groups: filtered, ...siblingNote(found) };
+      const text = [renderWarnings(structured, filtered.slice(0, maxGroups ?? 15), found.name)];
+      if (structured.note) text.push(`  ! ${structured.note}`);
+      return result(structured, text.join('\n'), format);
     }),
   );
 

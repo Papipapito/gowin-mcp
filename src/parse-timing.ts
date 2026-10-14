@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import type { ClockFmax, TimingPath, TimingReport, TnsRow } from './types.js';
+import type { ClockEdge, ClockFmax, TimingPath, TimingReport, TnsRow } from './types.js';
 
 /**
  * Parses `impl/pnr/<name>_tr_content.html`, the timing report body produced by
@@ -9,6 +9,10 @@ import type { ClockFmax, TimingPath, TimingReport, TnsRow } from './types.js';
  * Tables are read structurally (tr/td) rather than by flattening the document,
  * so column drift between tool versions surfaces as a missing field instead of
  * a silently misaligned number.
+ *
+ * The row parsers (parseFmax / parseTns / parsePaths) take plain string
+ * cells, so parse-timing-text.ts feeds them the same tables cut out of the
+ * `<name>.tr` plain-text report.
  */
 
 interface RawTable {
@@ -25,7 +29,7 @@ const ENTITIES: Record<string, string> = {
   '&#39;': "'",
 };
 
-function decode(s: string): string {
+export function decode(s: string): string {
   return s
     .replace(/&nbsp;|&amp;|&lt;|&gt;|&quot;|&#39;/g, (m) => ENTITIES[m] ?? m)
     .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)));
@@ -63,7 +67,13 @@ function bareClock(cell: string): string {
   return cell.replace(/:\[[^\]]*\]\s*$/, '').trim();
 }
 
-function headerHas(rows: string[][], ...needles: string[]): boolean {
+/** `clk_54m:[F]` -> `F`. */
+function clockEdge(cell: string): ClockEdge | undefined {
+  const m = cell.match(/:\[([RF])\]\s*$/);
+  return m ? (m[1] as ClockEdge) : undefined;
+}
+
+export function headerHas(rows: string[][], ...needles: string[]): boolean {
   const head = rows.slice(0, 3).flat().join(' ').toLowerCase();
   return needles.every((n) => head.includes(n.toLowerCase()));
 }
@@ -76,7 +86,7 @@ function dataRows(rows: string[][], headerNeedle: string): string[][] {
   return idx >= 0 ? rows.slice(idx + 1) : rows;
 }
 
-function parseFmax(rows: string[][]): ClockFmax[] {
+export function parseFmax(rows: string[][]): ClockFmax[] {
   const out: ClockFmax[] = [];
   for (const r of dataRows(rows, 'Actual Fmax')) {
     // NO. | Clock Name | Constraint | Actual Fmax | Logic Level | Entity
@@ -99,7 +109,7 @@ function parseFmax(rows: string[][]): ClockFmax[] {
   return out;
 }
 
-function parseTns(rows: string[][]): TnsRow[] {
+export function parseTns(rows: string[][]): TnsRow[] {
   const out: TnsRow[] = [];
   for (const r of dataRows(rows, 'Analysis Type')) {
     // Clock Name | Analysis Type | TNS | Number of Endpoints
@@ -109,12 +119,18 @@ function parseTns(rows: string[][]): TnsRow[] {
     const tns = num(r[2]);
     const endpoints = num(r[3]);
     if (!clock || !analysis || tns == null) continue;
-    out.push({ clock, analysis, tns, endpoints: endpoints ?? 0 });
+    // The text report writes "setup"/"hold"; the HTML "Setup"/"Hold".
+    out.push({
+      clock,
+      analysis: analysis.charAt(0).toUpperCase() + analysis.slice(1),
+      tns,
+      endpoints: endpoints ?? 0,
+    });
   }
   return out;
 }
 
-function parsePaths(rows: string[][]): TimingPath[] {
+export function parsePaths(rows: string[][]): TimingPath[] {
   const out: TimingPath[] = [];
   for (const r of dataRows(rows, 'Path Slack')) {
     // Path Number | Path Slack | From Node | To Node | From Clock | To Clock
@@ -131,6 +147,8 @@ function parsePaths(rows: string[][]): TimingPath[] {
       to: r[3]?.trim() ?? '',
       fromClock: bareClock(r[4] ?? ''),
       toClock: bareClock(r[5] ?? ''),
+      fromEdge: clockEdge(r[4] ?? ''),
+      toEdge: clockEdge(r[5] ?? ''),
       relation: num(r[6]),
       clockSkew: num(r[7]),
       dataDelay: num(r[8]),
@@ -139,7 +157,7 @@ function parsePaths(rows: string[][]): TimingPath[] {
   return out;
 }
 
-type PathKind = 'setup' | 'hold' | 'recovery' | 'removal';
+export type PathKind = 'setup' | 'hold' | 'recovery' | 'removal';
 
 /**
  * Every "<h2>/<h3>" heading with its document offset. The four path tables
@@ -155,9 +173,42 @@ function headings(html: string): { offset: number; text: string }[] {
   return out;
 }
 
-function pathKindFor(heading: string | undefined): PathKind | undefined {
+export function pathKindFor(heading: string | undefined): PathKind | undefined {
   const m = heading?.match(/\b(Setup|Hold|Recovery|Removal)\s+Paths\s+Table/i);
   return m ? (m[1].toLowerCase() as PathKind) : undefined;
+}
+
+/** Worst slack first; the tool's own numbering survives in `index`. */
+function bySlack(paths: TimingPath[]): TimingPath[] {
+  return [...paths].sort((a, b) => a.slack - b.slack || a.index - b.index);
+}
+
+export interface TimingParts {
+  fmax: ClockFmax[];
+  tns: TnsRow[];
+  paths: Record<PathKind, TimingPath[]>;
+  clocksWithoutPaths: string[];
+  recognized: boolean;
+  format: 'html' | 'text';
+}
+
+/** Sorts the path tables and picks the worst of each; shared by both parsers. */
+export function assembleTiming(p: TimingParts): TimingReport {
+  const setupPaths = bySlack(p.paths.setup);
+  const holdPaths = bySlack(p.paths.hold);
+  return {
+    fmax: p.fmax,
+    clocksWithoutPaths: p.clocksWithoutPaths,
+    tns: p.tns,
+    setupPaths,
+    holdPaths,
+    recoveryPaths: bySlack(p.paths.recovery),
+    removalPaths: bySlack(p.paths.removal),
+    worstSetup: setupPaths[0],
+    worstHold: holdPaths[0],
+    recognized: p.recognized,
+    format: p.format,
+  };
 }
 
 export function parseTimingHtml(html: string): TimingReport {
@@ -204,16 +255,14 @@ export function parseTimingHtml(html: string): TimingReport {
     ...html.matchAll(/No timing paths to get frequency of ([^!<]+)!/g),
   ].map((m) => decode(m[1]).trim());
 
-  return {
+  return assembleTiming({
     fmax,
-    clocksWithoutPaths,
     tns,
-    setupPaths: paths.setup,
-    holdPaths: paths.hold,
-    recoveryPaths: paths.recovery,
-    removalPaths: paths.removal,
+    paths,
+    clocksWithoutPaths,
     recognized: fmaxTableSeen || tnsTableSeen,
-  };
+    format: 'html',
+  });
 }
 
 export function parseTimingReport(trContentPath: string): TimingReport {

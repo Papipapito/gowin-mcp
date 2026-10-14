@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { resolveBuild } from '../dist/discover.js';
 import { checkBuild, loadBuild, summarize, timingVerdict } from '../dist/analyze.js';
 import { compareBuilds } from '../dist/compare.js';
-import { DEMO, FAILING, LEGACY, XDOMAIN, pinFixtureTimes } from './helpers.js';
+import { DEMO, FAILING, FMAXONLY, LEGACY, TRTEXT, XDOMAIN, pinFixtureTimes } from './helpers.js';
 
 pinFixtureTimes();
 const load = (dir, name) => loadBuild(resolveBuild(dir, name));
@@ -23,6 +23,7 @@ test('a clean build passes and a build with violations fails', () => {
   assert.equal(ok.status, 'pass');
   assert.equal(ok.ok, true);
   assert.deepEqual(ok.violations, []);
+  assert.deepEqual(ok.thresholds.fmaxWaivers, []);
 
   const bad = checkBuild(load(FAILING));
   assert.equal(bad.status, 'fail');
@@ -96,9 +97,86 @@ test('ignoreCrossDomain=true passes when every negative path is a clock domain c
   assert.deepEqual(bad.ignoredViolations, []);
 });
 
+test('an fMax shortfall with a clean TNS is an fMax-only violation that explains itself from the .sdc', () => {
+  const b = load(FMAXONLY);
+  assert.equal(b.resources.build.device, 'GW5AT-60');
+  assert.ok(b.timing.tns.every((r) => r.tns === 0), 'every TNS row is 0.000');
+  assert.deepEqual(b.timing.fmax.filter((f) => f.failing).map((f) => f.clock), ['clk_54m']);
+  assert.equal(b.sdc.readable, true, 'the .sdc named in the report is found under the project (constraints/)');
+  assert.ok(b.sdc.path.endsWith('fmaxonly.sdc'));
+
+  const r = checkBuild(b);
+  assert.equal(r.status, 'fail');
+  assert.equal(r.ok, false);
+  assert.equal(r.violations.length, 1);
+  const [v] = r.violations;
+  assert.deepEqual([v.kind, v.source, v.clock, v.amount, v.unit], ['fmax', 'fmax', 'clk_54m', -21.541, 'MHz']);
+  assert.match(v.detail, /^32\.455 MHz achieved against a 53\.996 MHz constraint, with no setup violation reported \(setup TNS 0\.000\)/);
+  assert.match(v.detail, /6 set_multicycle_path commands in the \.sdc name this clock/);
+  assert.match(v.detail, /2 of its reported setup paths are half-cycle relations/);
+  assert.match(v.detail, /Gowin derives fMax from the worst path's relation minus its slack/);
+  assert.match(v.detail, /waive it with fmaxWaivers/);
+  assert.doesNotMatch(v.detail, /set_false_path/, 'no false path names this clock');
+
+  const s = summarize(b);
+  assert.equal(s.status, 'fail');
+  assert.equal(s.timing.violations[0].detail, v.detail, 'gowin_summary carries the same explanation');
+  assert.deepEqual(
+    { readable: s.constraints.readable, multicyclePaths: s.constraints.multicyclePaths, falsePaths: s.constraints.falsePaths, clockGroups: s.constraints.clockGroups },
+    { readable: true, multicyclePaths: 6, falsePaths: 2, clockGroups: 3 },
+  );
+  assert.ok(s.constraints.clocks.includes('clk_54m'));
+});
+
+test('fmaxWaivers moves the fMax-only violation to ignoredViolations; a TNS violation is never waived', () => {
+  const r = checkBuild(load(FMAXONLY), { fmaxWaivers: ['clk_54m'] });
+  assert.equal(r.status, 'pass');
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.violations, []);
+  assert.deepEqual(r.ignoredViolations.map((v) => [v.kind, v.clock]), [['fmax', 'clk_54m']]);
+  assert.deepEqual(r.thresholds.fmaxWaivers, ['clk_54m']);
+  assert.match(r.reasons[0], /^no timing violations$/);
+  assert.match(r.notes[0], /1 fMax-only violation waived \(fmaxWaivers=\["clk_54m"\]\): clk_54m \(-21\.541 MHz\)/);
+  assert.match(r.notes[0], /a TNS violation is never waived/);
+
+  // Globs and case do not matter; a waiver that names no clock is pointed out.
+  assert.equal(checkBuild(load(FMAXONLY), { fmaxWaivers: ['CLK_54*'] }).status, 'pass');
+  const typo = checkBuild(load(FMAXONLY), { fmaxWaivers: ['clk_54', 'clk_54m'] });
+  assert.equal(typo.status, 'pass');
+  assert.match(typo.notes.join('\n'), /fmaxWaivers names no clock of this report: clk_54 /);
+
+  // The margin threshold does not re-flag a waived clock; it still catches the others.
+  const margin = checkBuild(load(FMAXONLY), { fmaxWaivers: ['clk_54m'], minFmaxMarginMhz: 5 });
+  assert.deepEqual(margin.thresholdFailures.map((t) => t.name), ['clk_86']);
+
+  // clk_eng in FAILING has a setup TNS violation: the waiver leaves it alone.
+  const bad = checkBuild(load(FAILING), { fmaxWaivers: ['clk_eng'] });
+  assert.equal(bad.status, 'fail');
+  assert.deepEqual(bad.violations.map((v) => v.source), ['tns']);
+  assert.deepEqual(bad.ignoredViolations, []);
+});
+
+test('an fMax-only violation without .sdc evidence still says to check the constraint', () => {
+  const b = load(FMAXONLY);
+  // Same report, constraints unreadable.
+  const gone = { ...b, sdc: { ...b.sdc, readable: false, path: undefined, multicyclePaths: [], falsePaths: [], clockGroups: [] } };
+  const r = checkBuild(gone);
+  assert.equal(r.status, 'fail');
+  assert.match(r.violations[0].detail, /The \.sdc at .*fmaxonly\.sdc could not be read, so its exceptions were not checked\.$/);
+  assert.match(r.violations[0].detail, /2 of its reported setup paths are half-cycle relations/, 'the path-table evidence does not depend on the .sdc');
+  assert.doesNotMatch(r.violations[0].detail, /set_multicycle_path/);
+
+  // No evidence at all: the plain advice.
+  const bare = { ...gone, timing: { ...b.timing, setupPaths: b.timing.setupPaths.filter((p) => p.fromEdge === p.toEdge) } };
+  assert.match(checkBuild(bare).violations[0].detail, /— check the constraint covers this domain\. The \.sdc at .* could not be read/);
+  const silent = { ...b, sdc: { ...b.sdc, multicyclePaths: [], falsePaths: [] }, timing: bare.timing };
+  assert.match(checkBuild(silent).violations[0].detail, /names this clock in no multicycle or false-path command\)$/);
+});
+
 test('compareBuilds keys path violations by clock pair: persisting between two copies', () => {
   const diff = compareBuilds(load(XDOMAIN), load(XDOMAIN));
   assert.equal(diff.safe, true);
+  assert.equal(diff.comparable, true);
   assert.deepEqual(diff.violations.introduced, []);
   assert.deepEqual(diff.violations.fixed, []);
   assert.deepEqual(
@@ -119,6 +197,28 @@ test('compareBuilds keys path violations by clock pair: persisting between two c
   assert.equal(compareBuilds(load(XDOMAIN), load(DEMO)).violations.fixed.length, 5);
 });
 
+test('compareBuilds across devices: safe is null and violations are not classified', () => {
+  const diff = compareBuilds(load(FMAXONLY), load(DEMO));
+  assert.equal(diff.comparable, false);
+  assert.equal(diff.safe, null);
+  assert.deepEqual(diff.violations, { introduced: [], fixed: [], persisting: [] }, 'the clk_54m fMax violation is not "fixed" by a different design');
+  assert.ok(diff.fmax.every((f) => f.statusChange === undefined));
+  assert.match(diff.notes[0], /Different devices \(GW5AT-60 vs GW2AR-18\).*safe is null/);
+  assert.match(diff.notes.join('\n'), /Violations per side, unclassified: before 1, after 0/);
+  assert.equal(diff.sameBitstream, false);
+});
+
+test('compareBuilds reports siblings per side and whether the bitstreams match', () => {
+  const diff = compareBuilds(load(DEMO), load(DEMO, 'stale'));
+  assert.deepEqual(diff.before.siblings, ['stale']);
+  assert.match(diff.before.note, /newest of 2 builds/);
+  assert.equal(diff.after.siblings, undefined, 'a named build has no siblings note');
+  assert.equal(diff.sameBitstream, true, 'demo.fs and stale.fs differ only in the Created Time header');
+  assert.match(diff.notes.join('\n'), /same body/);
+  assert.equal(diff.before.bitstream.bodySha256, diff.after.bitstream.bodySha256);
+  assert.notEqual(diff.before.bitstream.createdTime, diff.after.bitstream.createdTime);
+});
+
 test('missing timing is unknown, never clean, and fails the gate by default', () => {
   const legacy = load(LEGACY);
   const r = checkBuild(legacy);
@@ -131,6 +231,8 @@ test('missing timing is unknown, never clean, and fails the gate by default', ()
   assert.equal(s.status, 'unknown');
   assert.equal(s.clean, false);
   assert.equal(s.timing.status, 'unknown');
+  assert.equal(s.bitstream, undefined, 'no .fs next to this report');
+  assert.equal(s.constraints.readable, false);
 });
 
 test('failOnMissingTiming=false accepts an unknown build on resources alone', () => {
@@ -140,11 +242,25 @@ test('failOnMissingTiming=false accepts an unknown build on resources alone', ()
   assert.match(r.reasons.join('\n'), /accepted on resources alone/);
 });
 
-test('maxUtilization and minFmaxMarginMhz thresholds', () => {
-  // demo: CLS 77%, Logic 56%, BSRAM 35%; clk_eng margin 13.974 MHz.
+test('maxUtilization uses the recomputed percentage and quotes the rounded one', () => {
+  // demo: CLS 7915/10368 = 76.34% ("77%"), Logic 55.31%, BSRAM 34.78%; clk_eng margin 13.974 MHz.
   const util = checkBuild(load(DEMO), { maxUtilization: 60 });
   assert.equal(util.status, 'fail');
-  assert.deepEqual(util.thresholdFailures.map((t) => [t.kind, t.name, t.value]), [['utilization', 'CLS', 77]]);
+  assert.deepEqual(
+    util.thresholdFailures.map((t) => [t.kind, t.name, t.value, t.reported]),
+    [['utilization', 'CLS', 76.34, '77%']],
+  );
+  assert.match(util.thresholdFailures[0].detail, /CLS at 76\.34% \(77% as the tool rounds it\) exceeds maxUtilization 60%/);
+
+  // fmaxonly: CLS 29142/29952 = 97.30%, which the tool rounds up to 98%.
+  // A 97.5% limit holds on the real number; BSRAM at 118/118 does not.
+  const close = checkBuild(load(FMAXONLY), { maxUtilization: 97.5, fmaxWaivers: ['clk_54m'] });
+  assert.deepEqual(close.thresholdFailures.map((t) => [t.name, t.value, t.reported]), [['BSRAM', 100, '100%']]);
+  assert.doesNotMatch(close.thresholdFailures[0].detail, /rounds/, 'nothing to quote when both agree');
+
+  // legacy (V1.9.9) puts the percentage inside the usage cell; the recomputed value still gates.
+  const old = checkBuild(load(LEGACY), { maxUtilization: 50, failOnMissingTiming: false });
+  assert.deepEqual(old.thresholdFailures.map((t) => [t.name, t.value]), [['CLS', 56.92]]);
 
   const margin = checkBuild(load(DEMO), { minFmaxMarginMhz: 14 });
   assert.equal(margin.status, 'fail');
@@ -169,4 +285,28 @@ test('compareBuilds notes an unknown side and flags a regression', () => {
 
   const unknown = compareBuilds(load(LEGACY), load(DEMO));
   assert.ok(unknown.notes.some((n) => /"before" build is unknown/.test(n)));
+});
+
+test('summarize and checkBuild carry siblings and a note when a build was chosen among several', () => {
+  const s = summarize(load(DEMO));
+  assert.deepEqual(s.siblings, ['stale']);
+  assert.match(s.note, /^newest of 2 builds in .*; others: stale \(pass name to pick one\)$/);
+  const r = checkBuild(load(DEMO));
+  assert.deepEqual(r.siblings, ['stale']);
+  assert.equal(r.note, s.note);
+  assert.equal(summarize(load(DEMO, 'stale')).siblings, undefined);
+  assert.equal(checkBuild(load(FMAXONLY)).note, undefined);
+});
+
+test('a build whose timing exists only as <name>.tr is verified from the text report', () => {
+  const b = load(TRTEXT);
+  assert.equal(b.found.trContent, undefined);
+  assert.ok(b.found.tr.endsWith('trtext.tr'));
+  assert.equal(b.timing.format, 'text');
+  const r = checkBuild(b);
+  assert.equal(r.status, 'pass');
+  assert.equal(r.timing.status, 'pass');
+  const s = summarize(b);
+  assert.equal(s.timing.fmax.length, 5);
+  assert.equal(s.build.toolVersion, 'V1.9.12.04 (64-bit)');
 });

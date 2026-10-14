@@ -169,3 +169,35 @@ export function portMatcher(pattern: string | undefined): (name: string) => bool
   const needle = pattern.toLowerCase();
   return (name) => name.toLowerCase().includes(needle);
 }
+
+export interface PinFilter {
+  /** Substring or glob on the port name (see portMatcher). */
+  port?: string;
+  /** Also list package pins with no signal on them. Default false. */
+  includeUnused?: boolean;
+  /** Include the global clock routing table. Default true. */
+  includeClocks?: boolean;
+}
+
+/**
+ * Applies the gowin_pins options to a report. `ports` and `packagePins` are
+ * filtered the same way so both views agree: a used package pin stays only
+ * when its signal matches `port`; free pins stay only with `includeUnused`.
+ * `unusedPins` keeps counting the whole package.
+ */
+export function filterPinReport(
+  r: PinReport,
+  f: PinFilter,
+): { report: PinReport; unused: PackagePin[] } {
+  const match = portMatcher(f.port);
+  const unused = f.includeUnused ? r.packagePins.filter((p) => !p.signal) : [];
+  return {
+    report: {
+      ...r,
+      ports: r.ports.filter((p) => match(p.port)),
+      packagePins: r.packagePins.filter((p) => (p.signal ? match(p.signal) : f.includeUnused === true)),
+      clocks: f.includeClocks !== false ? r.clocks : [],
+    },
+    unused,
+  };
+}

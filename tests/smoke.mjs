@@ -1,7 +1,7 @@
 // Smoke test against real Gowin EDA output.
 // Usage: node tests/smoke.mjs <path-to-project-or-impl-dir>
 import { resolveBuild, discoverBuilds } from '../dist/discover.js';
-import { loadBuild, findViolations, explainViolation, formatFmax, formatResource } from '../dist/analyze.js';
+import { loadBuild, findViolations, explainViolation, formatFmax, formatResource, verdictOptions } from '../dist/analyze.js';
 
 const target = process.argv[2];
 if (!target) {
@@ -25,7 +25,9 @@ console.log('tool        ', i.toolVersion);
 console.log('created     ', i.createdTime);
 console.log('pnr elapsed ', i.elapsed, '  peak', i.peakMemory);
 console.log('cst         ', i.constraintsFile);
-console.log('sdc         ', i.sdcFile);
+console.log('sdc         ', i.sdcFile, b.sdc.readable ? `(read: ${b.sdc.multicyclePaths.length} multicycle, ${b.sdc.falsePaths.length} false path, ${b.sdc.clockGroups.length} clock group commands)` : '(not readable)');
+console.log('timing from ', b.found.trContent ?? b.found.tr ?? '(none)');
+console.log('bitstream   ', b.found.fs ?? '(none)');
 
 console.log('\n=== RESOURCES (headline) ===');
 const h = b.resources.headline;
@@ -43,7 +45,7 @@ for (const f of [...b.timing.fmax].sort((a, c) => a.marginMhz - c.marginMhz)) co
 console.log('  clocks without paths:', b.timing.clocksWithoutPaths.length);
 
 console.log('\n=== VIOLATIONS ===');
-const v = findViolations(b.timing);
+const v = findViolations(b.timing, verdictOptions(b));
 if (!v.length) console.log('  CLEAN');
 for (const x of v) console.log(`  ${x.kind} ${x.clock} ${x.amount}${x.unit} :: ${explainViolation(x, b.timing)}`);
 

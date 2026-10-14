@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
 
-import { parsePinReport, portMatcher } from '../dist/parse-pins.js';
+import { filterPinReport, parsePinReport, portMatcher } from '../dist/parse-pins.js';
 import { DEMO, LEGACY } from './helpers.js';
 
 test('ports, package pins and global clocks from a V1.9.12 report (CFG column present)', () => {
@@ -45,4 +45,28 @@ test('portMatcher: substring by default, glob with * and ?', () => {
   assert.equal(portMatcher('tmds_*_p[0]')('tmds_data_p[0]'), true);
   assert.equal(portMatcher('tmds_*_p[0]')('tmds_data_p[1]'), false);
   assert.equal(portMatcher('CART_MUX_SIG[?]')('CART_MUX_SIG[3]'), true);
+});
+
+test('filterPinReport: port filters package pins by signal even with includeUnused', () => {
+  const full = parsePinReport(join(DEMO, 'impl', 'pnr', 'demo.rpt.txt'));
+  const free = full.packagePins.filter((p) => !p.signal);
+  const data = full.packagePins.filter((p) => p.signal?.startsWith('CART_MUX'));
+  assert.ok(free.length >= 1 && data.length >= 1 && data.length + free.length < full.packagePins.length);
+
+  const narrow = filterPinReport(full, { port: 'CART_MUX*' });
+  assert.ok(narrow.report.ports.length >= 1);
+  assert.ok(narrow.report.ports.every((p) => p.port.startsWith('CART_MUX')));
+  assert.deepEqual(narrow.report.packagePins, data, 'used pins whose signal matches, nothing else');
+  assert.deepEqual(narrow.unused, []);
+  assert.equal(narrow.report.unusedPins, full.unusedPins, 'the count is still for the whole package');
+
+  const withFree = filterPinReport(full, { port: 'CART_MUX*', includeUnused: true });
+  assert.equal(withFree.report.packagePins.length, data.length + free.length, 'matching signals plus the free pins');
+  assert.ok(withFree.report.packagePins.every((p) => !p.signal || p.signal.startsWith('CART_MUX')));
+  assert.deepEqual(withFree.unused, free);
+
+  const noClocks = filterPinReport(full, { includeClocks: false });
+  assert.deepEqual(noClocks.report.clocks, []);
+  assert.equal(noClocks.report.ports.length, full.ports.length);
+  assert.equal(noClocks.report.packagePins.length, full.packagePins.length - free.length, 'free pins only with includeUnused');
 });

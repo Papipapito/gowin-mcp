@@ -25,8 +25,14 @@ export interface ResourceRow {
   depth: number;
   used?: number;
   available?: number;
-  /** Percentage as reported by the tool (not recomputed). */
+  /** Percentage as reported by the tool (rounded, e.g. "98%"; not recomputed). */
   utilization?: string;
+  /**
+   * used / available as a percentage with two decimals, recomputed from the
+   * numbers. The tool rounds its own column: 29142/29952 is 97.30 but
+   * reported as 98%. Absent when the row has no "used/available" pair.
+   */
+  utilizationPct?: number;
   /** Raw usage cell, kept because some rows carry a breakdown. */
   raw: string;
   /** Parsed breakdown, e.g. {LUT: 21883, ALU: 3325, ROM16: 0}. */
@@ -71,6 +77,8 @@ export interface TnsRow {
   endpoints: number;
 }
 
+export type ClockEdge = 'R' | 'F';
+
 export interface TimingPath {
   index: number;
   slack: number;
@@ -78,6 +86,9 @@ export interface TimingPath {
   to: string;
   fromClock: string;
   toClock: string;
+  /** Launch / capture edge, from the `clk:[R]` / `clk:[F]` suffix of the clock cells. */
+  fromEdge?: ClockEdge;
+  toEdge?: ClockEdge;
   relation?: number;
   clockSkew?: number;
   dataDelay?: number;
@@ -88,18 +99,24 @@ export interface TimingReport {
   /** Clocks the engine found no paths for — usually unconstrained or unused. */
   clocksWithoutPaths: string[];
   tns: TnsRow[];
+  /** Worst slack first (the tables are re-sorted; `index` keeps the tool's own numbering). */
   setupPaths: TimingPath[];
   holdPaths: TimingPath[];
   /** Asynchronous set/reset release checks (report_timing -recovery). */
   recoveryPaths: TimingPath[];
   /** Asynchronous set/reset hold-side checks (report_timing -removal). */
   removalPaths: TimingPath[];
+  /** The worst setup / hold path, kept even when the tables are trimmed for output. */
+  worstSetup?: TimingPath;
+  worstHold?: TimingPath;
   /**
    * False when the file was there but neither the fMax nor the TNS summary
    * table was found — a format this parser does not understand. Nothing can
    * be concluded about timing in that case.
    */
   recognized: boolean;
+  /** html = `_tr_content.html`; text = the `<name>.tr` plain-text report (fallback). */
+  format?: 'html' | 'text';
 }
 
 export interface Violation {
@@ -115,7 +132,7 @@ export interface Violation {
    * paths: negative slack in the setup/hold path tables that no negative TNS
    *        row accounts for. Gowin leaves paths between clock domains out of
    *        the TNS, so the summary looks clean while the path tables do not.
-   * fmax:  the Max Frequency summary.
+   * fmax:  the Max Frequency summary, for a clock with no setup violation.
    */
   source: 'tns' | 'paths' | 'fmax';
   /** Launch and capture clocks (source = paths). */
@@ -144,7 +161,52 @@ export interface TimingVerdict {
   violations: Violation[];
 }
 
-export interface BuildSummary {
+/** Header of `impl/pnr/<name>.fs` plus a hash of the configuration data. */
+export interface BitstreamInfo {
+  path: string;
+  toolVersion?: string;
+  device?: string;
+  deviceVersion?: string;
+  partNumber?: string;
+  devicePackage?: string;
+  /** Tool-reported 16-bit checksum, e.g. "0xDE97". */
+  checksum?: string;
+  userCode?: string;
+  createdTime?: string;
+  /** File size in bytes. */
+  size: number;
+  /**
+   * SHA-256 over every line that is not a `//` header comment, line endings
+   * stripped. Two .fs files with the same body program the device
+   * identically, whatever their Created Time says.
+   */
+  bodySha256: string;
+  bodyLines: number;
+}
+
+/** What the build's .sdc says, as far as the fMax check needs it. */
+export interface ConstraintsInfo {
+  /** The .sdc path the report names. */
+  reported?: string;
+  /** The file that was actually read (the reported path, or a copy found under the project). */
+  path?: string;
+  readable: boolean;
+  /** Clock names from create_clock / create_generated_clock -name. */
+  clocks: string[];
+  multicyclePaths: number;
+  falsePaths: number;
+  clockGroups: number;
+}
+
+/** Set when the caller did not name a build and impl/pnr/ holds several. */
+export interface SiblingNote {
+  /** Names of the other builds in the same impl/pnr/. */
+  siblings?: string[];
+  /** Which build was chosen and how to pick another. */
+  note?: string;
+}
+
+export interface BuildSummary extends SiblingNote {
   build: BuildInfo;
   resources: ResourceReport['headline'];
   timing: {
@@ -156,6 +218,8 @@ export interface BuildSummary {
   status: CheckStatus;
   /** True only when status is pass. Kept for callers of the 0.1 shape. */
   clean: boolean;
+  bitstream?: BitstreamInfo;
+  constraints?: ConstraintsInfo;
 }
 
 export interface CheckThresholds {
@@ -171,27 +235,39 @@ export interface CheckThresholds {
    * for designs where those crossings are declared false paths in the .sdc.
    */
   ignoreCrossDomain?: boolean;
+  /**
+   * Clocks (names, or globs with * and ?) whose fMax-only violation — an fMax
+   * below the constraint while the clock's setup TNS is 0 — is waived. Gowin
+   * derives fMax from the worst path's relation minus slack as if that were
+   * one period, so a clock whose paths are covered by set_multicycle_path or
+   * half-cycle relations reads as failing although every endpoint meets its
+   * constraint. A TNS violation on the same clock is never waived.
+   */
+  fmaxWaivers?: string[];
 }
 
 export interface ThresholdFailure {
   kind: 'utilization' | 'fmaxMargin';
   name: string;
+  /** For utilization: the recomputed percentage (two decimals). */
   value: number;
   limit: number;
+  /** For utilization: the percentage as the tool rounds it, e.g. "98%". */
+  reported?: string;
   detail: string;
 }
 
-export interface CheckResult {
+export interface CheckResult extends SiblingNote {
   status: CheckStatus;
   /** The CI decision: accept the build or not. */
   ok: boolean;
   reasons: string[];
   violations: Violation[];
   timing: { status: CheckStatus; reason: string };
-  thresholds: Required<Pick<CheckThresholds, 'failOnMissingTiming' | 'ignoreCrossDomain'>> &
+  thresholds: Required<Pick<CheckThresholds, 'failOnMissingTiming' | 'ignoreCrossDomain' | 'fmaxWaivers'>> &
     Pick<CheckThresholds, 'maxUtilization' | 'minFmaxMarginMhz'>;
   thresholdFailures: ThresholdFailure[];
-  /** Cross-domain path violations left out of the decision by ignoreCrossDomain. */
+  /** Violations left out of the decision: cross-domain paths (ignoreCrossDomain) and waived fMax (fmaxWaivers). */
   ignoredViolations: Violation[];
   /** Context the reader needs to interpret the decision, e.g. why the TNS looks clean. */
   notes: string[];
@@ -248,6 +324,7 @@ export interface PinReport {
   clocks: ClockSignal[];
   ports: PortPin[];
   packagePins: PackagePin[];
+  /** Free pins in the whole package, before any filter. */
   unusedPins: number;
 }
 

@@ -1,7 +1,12 @@
+import { readBitstream } from './bitstream.js';
 import { parseResourceReport } from './parse-resources.js';
 import { parseTimingReport } from './parse-timing.js';
+import { parseTimingTextReport } from './parse-timing-text.js';
+import { clockExceptions, constraintsInfo, readSdc } from './sdc.js';
+import type { SdcInfo } from './sdc.js';
 import type { FoundBuild } from './discover.js';
 import type {
+  BitstreamInfo,
   BuildSummary,
   CheckResult,
   CheckStatus,
@@ -9,6 +14,7 @@ import type {
   ClockFmax,
   ResourceReport,
   ResourceRow,
+  SiblingNote,
   ThresholdFailure,
   TimingPath,
   TimingReport,
@@ -17,24 +23,40 @@ import type {
   Violation,
 } from './types.js';
 
-/** Loads and cross-checks the two reports that make up one build. */
+/** Loads and cross-checks the reports that make up one build. */
 export interface LoadedBuild {
   found: FoundBuild;
   resources: ResourceReport;
   timing?: TimingReport;
+  /** The .sdc the report names, when it can be found; informs the fMax check. */
+  sdc: SdcInfo;
 }
 
 export function loadBuild(found: FoundBuild): LoadedBuild {
+  const resources = parseResourceReport(found.rptTxt);
+  let timing: TimingReport | undefined;
+  if (found.trContent) timing = parseTimingReport(found.trContent);
+  else if (found.tr) timing = parseTimingTextReport(found.tr);
   return {
     found,
-    resources: parseResourceReport(found.rptTxt),
-    timing: found.trContent ? parseTimingReport(found.trContent) : undefined,
+    resources,
+    timing,
+    sdc: readSdc(resources.build.sdcFile, found.projectDir),
   };
 }
 
 export interface ViolationOptions {
   /** Leave out cross-domain path violations (see CheckThresholds.ignoreCrossDomain). */
   ignoreCrossDomain?: boolean;
+  /** Clocks whose fMax-only violation is waived (see CheckThresholds.fmaxWaivers). */
+  fmaxWaivers?: string[];
+  /** The build's constraints, used to explain an fMax-only violation. */
+  sdc?: SdcInfo;
+}
+
+/** Options a loaded build supplies on its own. */
+export function verdictOptions(b: LoadedBuild): ViolationOptions {
+  return { sdc: b.sdc };
 }
 
 type SlackKind = 'setup' | 'hold';
@@ -117,37 +139,93 @@ function pathViolations(timing: TimingReport): Violation[] {
   return out;
 }
 
-/** The cross-domain path violations `ignoreCrossDomain` leaves out of the decision. */
-export function crossDomainViolations(timing: TimingReport | undefined): Violation[] {
-  if (!timing) return [];
-  return pathViolations(timing).filter((v) => v.crossDomain);
+/**
+ * Why a clock can miss its fMax with a clean TNS, and what to do about it.
+ *
+ * Gowin's Max Frequency summary derives the figure from the worst path's
+ * (relation - slack) as if that were one clock period. A path under a
+ * `set_multicycle_path -end 2` has a relation of two periods, and a path
+ * launched on one edge and captured on the other has half a period, so a
+ * clock whose paths carry such exceptions reads as failing although every
+ * endpoint meets its constraint — which is exactly what a 0.000 TNS says.
+ */
+function fmaxDetail(f: ClockFmax, timing: TimingReport, sdc: SdcInfo | undefined): string {
+  const tnsRow = timing.tns.find((r) => r.clock === f.clock && tnsKind(r) === 'setup');
+  const tns = tnsRow ? `setup TNS ${tnsRow.tns.toFixed(3)}` : 'no setup TNS row';
+  let s = `${f.actualMhz} MHz achieved against a ${f.constraintMhz} MHz constraint, with no setup violation reported (${tns})`;
+
+  const evidence: string[] = [];
+  const ex = clockExceptions(sdc, f.clock);
+  const plural = (n: number, what: string) => `${n} ${what}${n === 1 ? '' : 's'}`;
+  if (ex.multicycle) evidence.push(`${plural(ex.multicycle, 'set_multicycle_path command')} in the .sdc name${ex.multicycle === 1 ? 's' : ''} this clock`);
+  if (ex.falsePath) evidence.push(`${plural(ex.falsePath, 'set_false_path command')} in the .sdc name${ex.falsePath === 1 ? 's' : ''} it`);
+  const halfCycle = timing.setupPaths.filter(
+    (p) =>
+      (p.fromClock === f.clock || p.toClock === f.clock) && p.fromEdge && p.toEdge && p.fromEdge !== p.toEdge,
+  ).length;
+  if (halfCycle) {
+    evidence.push(
+      `${halfCycle} of its reported setup path${halfCycle === 1 ? ' is a' : 's are'} half-cycle relation${halfCycle === 1 ? '' : 's'} (launch and capture on opposite edges)`,
+    );
+  }
+
+  const unread =
+    sdc && !sdc.readable
+      ? ` The .sdc${sdc.reported ? ` at ${sdc.reported}` : ''} could not be read, so its exceptions were not checked.`
+      : '';
+  if (evidence.length) {
+    s +=
+      `. ${evidence.join('; ')}. Gowin derives fMax from the worst path's relation minus its slack as if that were a single period, ` +
+      'so paths under a multicycle or half-cycle relation pull the figure below the constraint although they meet it. ' +
+      `If that is the case here, waive it with fmaxWaivers; otherwise check that the constraint covers the domain.${unread}`;
+  } else if (unread) {
+    s += ` — check the constraint covers this domain.${unread}`;
+  } else {
+    s += ' — check the constraint covers this domain (the .sdc names this clock in no multicycle or false-path command)';
+  }
+  return s;
+}
+
+/** Case-insensitive clock name, or a glob with * and ?. */
+export function clockMatcher(pattern: string): (clock: string) => boolean {
+  if (/[*?]/.test(pattern)) {
+    const re = new RegExp(
+      `^${pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.')}$`,
+      'i',
+    );
+    return (clock) => re.test(clock);
+  }
+  const want = pattern.toLowerCase();
+  return (clock) => clock.toLowerCase() === want;
+}
+
+function waived(v: Violation, waivers: string[] | undefined): boolean {
+  if (v.source !== 'fmax' || !waivers?.length) return false;
+  return waivers.some((w) => clockMatcher(w)(v.clock));
 }
 
 /**
- * Collects every timing failure into one list.
+ * Collects every timing failure, then splits it into the ones that count
+ * and the ones the options set aside.
  *
  * Setup and hold come first from the TNS summary, which is complete for what
  * it counts (the path tables are capped by `-max_paths`), then from the path
  * tables for the negative slack the TNS leaves out: paths between clock
- * domains. See pathViolations.
+ * domains (see pathViolations). fMax is only raised for a clock that no
+ * setup violation already covers — the same defect is not counted twice, and
+ * an fMax shortfall with a clean TNS is itself worth surfacing: the
+ * constraint is missing, or the shortfall is how Gowin reports exceptions
+ * (see fmaxDetail).
  */
-export function findViolations(
+export function splitViolations(
   timing: TimingReport | undefined,
   opts: ViolationOptions = {},
-): Violation[] {
-  if (!timing) return [];
-  const out = [
-    ...tnsViolations(timing),
-    ...pathViolations(timing).filter((v) => !(opts.ignoreCrossDomain && v.crossDomain)),
-  ];
+): { kept: Violation[]; ignored: Violation[] } {
+  if (!timing) return { kept: [], ignored: [] };
+  const all = [...tnsViolations(timing), ...pathViolations(timing)];
 
-  // A clock that misses its constraint almost always shows up as a setup
-  // violation too. Reporting both is the same defect counted twice, so fMax is
-  // only raised when nothing in the TNS summary already covers that clock —
-  // which is itself worth surfacing, since it means the constraint is missing
-  // or the path was excluded from analysis.
   const clocksWithSlackViolation = new Set<string>();
-  for (const v of out) {
+  for (const v of all) {
     if (v.kind !== 'setup') continue;
     clocksWithSlackViolation.add(v.clock);
     if (v.fromClock) clocksWithSlackViolation.add(v.fromClock);
@@ -155,19 +233,35 @@ export function findViolations(
   }
   for (const f of timing.fmax) {
     if (!f.failing || clocksWithSlackViolation.has(f.clock)) continue;
-    out.push({
+    all.push({
       kind: 'fmax',
       source: 'fmax',
       clock: f.clock,
       amount: f.marginMhz,
       unit: 'MHz',
-      detail: `${f.actualMhz} MHz achieved against a ${f.constraintMhz} MHz constraint, with no setup violation reported — check the constraint covers this domain`,
+      detail: fmaxDetail(f, timing, opts.sdc),
     });
   }
 
   // Worst first: most negative slack, then largest frequency shortfall.
-  out.sort((a, b) => a.amount - b.amount);
-  return out;
+  all.sort((a, b) => a.amount - b.amount);
+  const kept: Violation[] = [];
+  const ignored: Violation[] = [];
+  for (const v of all) {
+    const out = (opts.ignoreCrossDomain && v.crossDomain) || waived(v, opts.fmaxWaivers);
+    (out ? ignored : kept).push(v);
+  }
+  return { kept, ignored };
+}
+
+/** The violations that count under `opts`. */
+export function findViolations(timing: TimingReport | undefined, opts: ViolationOptions = {}): Violation[] {
+  return splitViolations(timing, opts).kept;
+}
+
+/** The violations `opts` set aside (cross-domain paths, waived fMax). */
+export function ignoredViolations(timing: TimingReport | undefined, opts: ViolationOptions = {}): Violation[] {
+  return splitViolations(timing, opts).ignored;
 }
 
 /**
@@ -185,7 +279,7 @@ export function timingVerdict(
   if (!timing) {
     return {
       status: 'unknown',
-      reason: 'no timing report (_tr_content.html is missing — the timing engine did not run)',
+      reason: 'no timing report (_tr_content.html is missing and there is no <name>.tr — the timing engine did not run)',
       violations: [],
     };
   }
@@ -229,8 +323,27 @@ export function explainViolation(
   return `${v.detail} — worst path ${worst.slack} ns: ${worst.from} -> ${worst.to}`;
 }
 
+/** The `siblings` / `note` pair every tool publishes when a build was chosen among several. */
+export function siblingNote(found: FoundBuild): SiblingNote {
+  if (!found.siblings?.length) return {};
+  return {
+    siblings: found.siblings,
+    note: `newest of ${found.siblings.length + 1} builds in ${found.implDir}; others: ${found.siblings.join(', ')} (pass name to pick one)`,
+  };
+}
+
+/** The bitstream header and body hash, when the .fs is there and readable. */
+export function bitstreamOf(found: FoundBuild): BitstreamInfo | undefined {
+  if (!found.fs) return undefined;
+  try {
+    return readBitstream(found.fs);
+  } catch {
+    return undefined;
+  }
+}
+
 export function summarize(loaded: LoadedBuild): BuildSummary {
-  const verdict = timingVerdict(loaded.timing);
+  const verdict = timingVerdict(loaded.timing, verdictOptions(loaded));
   return {
     build: loaded.resources.build,
     resources: loaded.resources.headline,
@@ -242,15 +355,21 @@ export function summarize(loaded: LoadedBuild): BuildSummary {
     },
     status: verdict.status,
     clean: verdict.status === 'pass',
+    bitstream: bitstreamOf(loaded.found),
+    constraints: constraintsInfo(loaded.sdc),
+    ...siblingNote(loaded.found),
   };
 }
 
-/** Utilization as a number 0-100, from the tool's own "66%" cell or recomputed. */
+/**
+ * Utilization as a number 0-100: recomputed from used/available when both
+ * are there (the tool rounds its own column), else the tool's "66%" cell.
+ */
 export function utilizationPct(row: ResourceRow | undefined): number | undefined {
   if (!row) return undefined;
+  if (row.utilizationPct != null) return row.utilizationPct;
   const m = row.utilization?.match(/-?\d+(?:\.\d+)?/);
   if (m) return Number(m[0]);
-  if (row.used != null && row.available) return Number(((row.used / row.available) * 100).toFixed(2));
   return undefined;
 }
 
@@ -265,11 +384,13 @@ export function utilizationPct(row: ResourceRow | undefined): number | undefined
 export function checkBuild(loaded: LoadedBuild, thresholds: CheckThresholds = {}): CheckResult {
   const failOnMissingTiming = thresholds.failOnMissingTiming ?? true;
   const ignoreCrossDomain = thresholds.ignoreCrossDomain ?? false;
-  const verdict = timingVerdict(loaded.timing, { ignoreCrossDomain });
+  const fmaxWaivers = thresholds.fmaxWaivers ?? [];
+  const opts: ViolationOptions = { ignoreCrossDomain, fmaxWaivers, sdc: loaded.sdc };
+  const verdict = timingVerdict(loaded.timing, opts);
   const reasons: string[] = [];
   const notes: string[] = [];
   const thresholdFailures: ThresholdFailure[] = [];
-  const ignoredViolations = ignoreCrossDomain ? crossDomainViolations(loaded.timing) : [];
+  const ignored = ignoredViolations(loaded.timing, opts);
 
   if (verdict.status === 'fail') reasons.push(verdict.reason);
 
@@ -286,13 +407,30 @@ export function checkBuild(loaded: LoadedBuild, thresholds: CheckThresholds = {}
         'Path counts are lower bounds: the tables are capped by -max_paths.',
     );
   }
-  if (ignoredViolations.length) {
-    const n = ignoredViolations.length;
-    const pairs = ignoredViolations.map((v) => `${v.kind} ${v.clock} (${v.amount} ns)`).join(', ');
+  const ignoredCross = ignored.filter((v) => v.crossDomain);
+  if (ignoredCross.length) {
+    const n = ignoredCross.length;
+    const pairs = ignoredCross.map((v) => `${v.kind} ${v.clock} (${v.amount} ns)`).join(', ');
     notes.push(
       `${n} cross-domain path violation${n === 1 ? '' : 's'} ignored (ignoreCrossDomain=true): ${pairs}. ` +
         'Only safe when the .sdc declares these crossings as false paths or asynchronous clock groups.',
     );
+  }
+  const waivedFmax = ignored.filter((v) => v.source === 'fmax');
+  if (waivedFmax.length) {
+    const n = waivedFmax.length;
+    const list = waivedFmax.map((v) => `${v.clock} (${v.amount} MHz)`).join(', ');
+    notes.push(
+      `${n} fMax-only violation${n === 1 ? '' : 's'} waived (fmaxWaivers=${JSON.stringify(fmaxWaivers)}): ${list}. ` +
+        "Only safe when the clock's setup TNS is 0 and the shortfall is how Gowin reports its multicycle or half-cycle paths; a TNS violation is never waived.",
+    );
+  }
+  if (fmaxWaivers.length && loaded.timing) {
+    const clocks = loaded.timing.fmax.map((f) => f.clock);
+    const unmatched = fmaxWaivers.filter((w) => !clocks.some((c) => clockMatcher(w)(c)));
+    if (unmatched.length) {
+      notes.push(`fmaxWaivers names no clock of this report: ${unmatched.join(', ')} (clocks: ${clocks.join(', ') || 'none'}).`);
+    }
   }
 
   if (thresholds.maxUtilization != null) {
@@ -304,12 +442,15 @@ export function checkBuild(loaded: LoadedBuild, thresholds: CheckThresholds = {}
     ] as const) {
       const pct = utilizationPct(row);
       if (pct == null || pct <= thresholds.maxUtilization) continue;
+      const reported = row?.utilization;
+      const rounded = reported && reported !== `${pct}%` ? ` (${reported} as the tool rounds it)` : '';
       thresholdFailures.push({
         kind: 'utilization',
         name: label,
         value: pct,
         limit: thresholds.maxUtilization,
-        detail: `${label} at ${pct}% exceeds maxUtilization ${thresholds.maxUtilization}%`,
+        reported,
+        detail: `${label} at ${pct}%${rounded} exceeds maxUtilization ${thresholds.maxUtilization}%`,
       });
     }
   }
@@ -317,9 +458,11 @@ export function checkBuild(loaded: LoadedBuild, thresholds: CheckThresholds = {}
   if (thresholds.minFmaxMarginMhz != null && loaded.timing) {
     for (const f of loaded.timing.fmax) {
       if (f.marginMhz >= thresholds.minFmaxMarginMhz) continue;
-      // A clock already failing its constraint is reported as a violation;
-      // the margin threshold adds the ones that pass but too narrowly.
-      if (f.failing && verdict.violations.some((v) => v.clock === f.clock)) continue;
+      // A clock already failing its constraint is reported as a violation
+      // (or deliberately waived); the margin threshold adds the ones that
+      // pass but too narrowly.
+      const covered = (v: Violation) => v.clock === f.clock || v.fromClock === f.clock || v.toClock === f.clock;
+      if (f.failing && (verdict.violations.some(covered) || waivedFmax.some(covered))) continue;
       thresholdFailures.push({
         kind: 'fmaxMargin',
         name: f.clock,
@@ -363,10 +506,12 @@ export function checkBuild(loaded: LoadedBuild, thresholds: CheckThresholds = {}
       minFmaxMarginMhz: thresholds.minFmaxMarginMhz,
       failOnMissingTiming,
       ignoreCrossDomain,
+      fmaxWaivers,
     },
     thresholdFailures,
-    ignoredViolations,
+    ignoredViolations: ignored,
     notes,
+    ...siblingNote(loaded.found),
   };
 }
 

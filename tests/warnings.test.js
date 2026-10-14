@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { resolveBuild } from '../dist/discover.js';
 import { loadBuild } from '../dist/analyze.js';
-import { parseLogText, readWarnings } from '../dist/parse-log.js';
+import { parseLogText, pattern, quoted, readWarnings } from '../dist/parse-log.js';
 import { DEMO, LEGACY, pinFixtureTimes } from './helpers.js';
 
 pinFixtureTimes();
@@ -33,6 +33,21 @@ test('log lines: level, code, message and source location', () => {
   assert.equal(msgs[2].message, "Non-net output port 'cx' cannot be initialized at declaration in SystemVerilog mode");
 });
 
+test('pattern and quoted: an apostrophe is not a quote', () => {
+  const ta1117 = 'Can\'t calculate clocks\' relationship between: "u_top/u_divdac/CLKOUT.default_gen_clk" and "clk_54m"';
+  assert.equal(pattern(ta1117), "Can't calculate clocks' relationship between: X and X");
+  assert.deepEqual(quoted(ta1117), ['u_top/u_divdac/CLKOUT.default_gen_clk', 'clk_54m']);
+
+  const ex0200 = 'Property "syn_ramstyle" set invalid for "mem_simple_dual_port_async_read(DATA_WIDTH=8,DEPTH=32\'b00000000000000000000000000001001)"';
+  assert.equal(pattern(ex0200), 'Property X set invalid for X', "the 32'b literal inside the name does not end the quote");
+  assert.deepEqual(quoted(ex0200), ['syn_ramstyle', "mem_simple_dual_port_async_read(DATA_WIDTH=8,DEPTH=32'b00000000000000000000000000001001)"]);
+
+  assert.equal(pattern("Can't find object named 'u_top/u_missing'"), "Can't find object named X");
+  assert.equal(pattern("'u_top/u_div27/CLKOUT.default_gen_clk' was determined to be a clock but was not created."), 'X was determined to be a clock but was not created.');
+  assert.deepEqual(quoted("'u_top/u_div27/CLKOUT.default_gen_clk' was determined to be a clock"), ['u_top/u_div27/CLKOUT.default_gen_clk']);
+  assert.equal(pattern('Expression size 8 truncated to fit in target size 7'), 'Expression size N truncated to fit in target size N');
+});
+
 test('readWarnings groups by code and cross-checks TA1132 with the timing report', () => {
   const found = resolveBuild(DEMO);
   const b = loadBuild(found);
@@ -43,11 +58,16 @@ test('readWarnings groups by code and cross-checks TA1132 with the timing report
   assert.ok(r.totals.warnings > 10);
   assert.equal(r.groups[0].code, 'CT1135', 'errors sort first');
   assert.equal(r.groups[0].locations[0], 'constraints/demo.cst:12');
+  assert.equal(r.groups[0].pattern, "Can't find object named X");
 
   const ta = r.groups.find((g) => g.code === 'TA1132');
   assert.equal(ta.count, 3);
   assert.equal(ta.stage, 'pnr');
   assert.match(ta.hint, /create_clock/);
+
+  const rel = r.groups.find((g) => g.code === 'TA1117');
+  assert.equal(rel.count, 2);
+  assert.equal(rel.pattern, "Can't calculate clocks' relationship between: X and X");
 
   const ex = r.groups.find((g) => g.code === 'EX2478');
   assert.ok(ex.count >= 2);

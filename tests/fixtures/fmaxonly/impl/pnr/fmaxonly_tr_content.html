@@ -1,0 +1,860 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<title>Timing Analysis Report</title>
+<style type="text/css">
+@import url(../temp/style.css);
+body { font-family: Verdana, Arial, sans-serif; font-size: 12px; }
+div#content { width: 100%; margin: }
+hr { margin-top: 30px; margin-bottom: 30px; }
+h1, h3 { text-align: center; }
+h1 {margin-top: 50px; }
+table, th, td {white-space:pre; border: 1px solid #aaa; }
+table { border-collapse:collapse; margin-top: 10px; margin-bottom: 20px; width: 100%; }
+th, td { padding: 5px 5px 5px 5px; }
+th { color: #fff; font-weight: bold; background-color: #0084ff; }
+table.summary_table td.label { width: 24%; min-width: 200px; background-color: #dee8f4; }
+table.detail_table th.label {  min-width: 8%; width: 8%; }
+</style>
+</head>
+<body>
+<div id="content">
+<h1><a name="Message">Timing Messages</a></h1>
+<table class="summary_table">
+<tr>
+<td class="label">Report Title</td>
+<td>Timing Analysis Report</td>
+</tr>
+<tr>
+<td class="label">Design File</td>
+<td>C:\work\fmaxonly\impl\gwsynthesis\fmaxonly.vg</td>
+</tr>
+<tr>
+<td class="label">Physical Constraints File</td>
+<td>C:\work\fmaxonly\constraints\fmaxonly.cst</td>
+</tr>
+<tr>
+<td class="label">Timing Constraint File</td>
+<td>C:\work\fmaxonly\constraints\fmaxonly.sdc</td>
+</tr>
+<tr>
+<td class="label">Tool Version</td>
+<td>V1.9.12.03 (64-bit)</td>
+</tr>
+<tr>
+<td class="label">Part Number</td>
+<td>GW5AT-LV60PG484AC1/I0</td>
+</tr>
+<tr>
+<td class="label">Device</td>
+<td>GW5AT-60</td>
+</tr>
+<tr>
+<td class="label">Device Version</td>
+<td>B</td>
+</tr>
+<tr>
+<td class="label">Created Time</td>
+<td>Wed Oct 14 21:11:35 2026
+</td>
+</tr>
+<tr>
+<td class="label">Legal Announcement</td>
+<td>Copyright (C)2014-2026 Gowin Semiconductor Corporation. All rights reserved.</td>
+</tr>
+</table>
+<h1><a name="Summary">Timing Summaries</a></h1>
+<h2><a name="STA_Tool_Run_Summary">STA Tool Run Summary:</a></h2>
+<table class="summary_table">
+<tr>
+<td class="label">Setup Delay Model</td>
+<td>Slow 0.93V 0C C1/I0</td>
+</tr>
+<tr>
+<td class="label">Hold Delay Model</td>
+<td>Fast 0.975V 85C C1/I0</td>
+</tr>
+<tr>
+<td class="label">Numbers of Paths Analyzed</td>
+<td>94061</td>
+</tr>
+<tr>
+<td class="label">Numbers of Endpoints Analyzed</td>
+<td>112381</td>
+</tr>
+<tr>
+<td class="label">Numbers of Falling Endpoints</td>
+<td>121</td>
+</tr>
+<tr>
+<td class="label">Numbers of Setup Violated Endpoints</td>
+<td>0</td>
+</tr>
+<tr>
+<td class="label">Numbers of Hold Violated Endpoints</td>
+<td>0</td>
+</tr>
+</table>
+<h2><a name="Clock_Report">Clock Summary:</a></h2>
+<table class="detail_table">
+<tr>
+<th class="label">NO.</th>
+<th class="label">Clock Name</th>
+<th class="label">Type</th>
+<th class="label">Period</th>
+<th class="label">Frequency(MHz)</th>
+<th class="label">Rise</th>
+<th class="label">Fall</th>
+<th class="label">Source</th>
+<th class="label">Master</th>
+<th class="label">Objects</th>
+</tr>
+<tr>
+<td>1</td>
+<td>clk_in</td>
+<td>Base</td>
+<td>20.000</td>
+<td>50.000
+<td>0.000</td>
+<td>10.000</td>
+<td></td>
+<td></td>
+<td>ex_clk_27m </td>
+</tr>
+<tr>
+<td>2</td>
+<td>clk_108m</td>
+<td>Base</td>
+<td>9.260</td>
+<td>107.991
+<td>0.000</td>
+<td>4.630</td>
+<td></td>
+<td></td>
+<td>pll_main/u_pll/PLLA_inst/CLKOUT0 </td>
+</tr>
+<tr>
+<td>3</td>
+<td>clk_54m</td>
+<td>Base</td>
+<td>18.520</td>
+<td>53.996
+<td>0.000</td>
+<td>9.260</td>
+<td></td>
+<td></td>
+<td>pll_main/u_pll/PLLA_inst/CLKOUT1 </td>
+</tr>
+<tr>
+<td>4</td>
+<td>clk_135m</td>
+<td>Base</td>
+<td>7.408</td>
+<td>134.989
+<td>0.000</td>
+<td>3.704</td>
+<td></td>
+<td></td>
+<td>pll_main/u_pll/PLLA_inst/CLKOUT3 </td>
+</tr>
+<tr>
+<td>5</td>
+<td>clk_27m</td>
+<td>Base</td>
+<td>37.040</td>
+<td>26.998
+<td>0.000</td>
+<td>18.520</td>
+<td></td>
+<td></td>
+<td>pll_main/u_pll/PLLA_inst/CLKOUT2 </td>
+</tr>
+<tr>
+<td>6</td>
+<td>clk27_video</td>
+<td>Base</td>
+<td>37.037</td>
+<td>27.000
+<td>0.000</td>
+<td>18.518</td>
+<td></td>
+<td></td>
+<td>pll_video27/PLLA_inst/CLKOUT0 </td>
+</tr>
+<tr>
+<td>7</td>
+<td>clk_hdmi</td>
+<td>Base</td>
+<td>13.468</td>
+<td>74.250
+<td>0.000</td>
+<td>6.734</td>
+<td></td>
+<td></td>
+<td>pll_video/PLLA_inst/CLKOUT0 </td>
+</tr>
+<tr>
+<td>8</td>
+<td>clk_hdmi5</td>
+<td>Base</td>
+<td>2.694</td>
+<td>371.195
+<td>0.000</td>
+<td>1.347</td>
+<td></td>
+<td></td>
+<td>pll_video/PLLA_inst/CLKOUT1 </td>
+</tr>
+<tr>
+<td>9</td>
+<td>clk_usb12</td>
+<td>Base</td>
+<td>83.333</td>
+<td>12.000
+<td>0.000</td>
+<td>41.667</td>
+<td></td>
+<td></td>
+<td>pll_usb/PLLA_inst/CLKOUT0 </td>
+</tr>
+<tr>
+<td>10</td>
+<td>eng_clk375</td>
+<td>Base</td>
+<td>26.666</td>
+<td>37.501
+<td>0.000</td>
+<td>13.333</td>
+<td></td>
+<td></td>
+<td>pll_main/u_pll/PLLA_inst/CLKOUT4 </td>
+</tr>
+<tr>
+<td>11</td>
+<td>clock_reset</td>
+<td>Base</td>
+<td>277.778</td>
+<td>3.600
+<td>0.000</td>
+<td>138.889</td>
+<td></td>
+<td></td>
+<td>bus_reset_n </td>
+</tr>
+<tr>
+<td>12</td>
+<td>spi_sclk</td>
+<td>Base</td>
+<td>50.000</td>
+<td>20.000
+<td>0.000</td>
+<td>25.000</td>
+<td></td>
+<td></td>
+<td>spi_sclk </td>
+</tr>
+<tr>
+<td>13</td>
+<td>clk_86</td>
+<td>Base</td>
+<td>11.640</td>
+<td>85.911
+<td>0.000</td>
+<td>5.820</td>
+<td></td>
+<td></td>
+<td>pll_vdp/PLLA_inst/CLKOUT0 </td>
+</tr>
+<tr>
+<td>14</td>
+<td>ddr_clk4x</td>
+<td>Base</td>
+<td>3.367</td>
+<td>297.000
+<td>0.000</td>
+<td>1.684</td>
+<td></td>
+<td></td>
+<td>u_ddr/pll_ddr3_inst/PLLA_inst/CLKOUT2 </td>
+</tr>
+<tr>
+<td>15</td>
+<td>ddr_clk1x</td>
+<td>Base</td>
+<td>13.470</td>
+<td>74.239
+<td>0.000</td>
+<td>6.734</td>
+<td></td>
+<td></td>
+<td>u_ddr/u_ddr3/gw3_top/u_ddr_phy_top/fclkdiv/CLKOUT </td>
+</tr>
+<tr>
+<td>16</td>
+<td>fan_ro_en</td>
+<td>Base</td>
+<td>10.000</td>
+<td>100.000
+<td>0.000</td>
+<td>5.000</td>
+<td></td>
+<td></td>
+<td>u_fan/ro_en_s6/Q </td>
+</tr>
+<tr>
+<td>17</td>
+<td>u_roosc/n[8]</td>
+<td>Base</td>
+<td>10.000</td>
+<td>100.000
+<td>0.000</td>
+<td>5.000</td>
+<td></td>
+<td></td>
+<td>u_roosc/g_ring[7].u_lat/Q </td>
+</tr>
+</table>
+<h2><a name="Max_Frequency_Report">Max Frequency Summary:</a></h2>
+<table>
+<tr>
+<th>NO.</th>
+<th>Clock Name</th>
+<th>Constraint</th>
+<th>Actual Fmax</th>
+<th>Logic Level</th>
+<th>Entity</th>
+</tr>
+<tr>
+<td>1</td>
+<td>clk_in</td>
+<td>50.000(MHz)</td>
+<td>131.434(MHz)</td>
+<td>12</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>2</td>
+<td>clk_108m</td>
+<td>107.991(MHz)</td>
+<td>117.113(MHz)</td>
+<td>4</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>3</td>
+<td>clk_54m</td>
+<td>53.996(MHz)</td>
+<td style="color: #FF0000;" class = "error">32.455(MHz)</td>
+<td>10</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>4</td>
+<td>clk_27m</td>
+<td>26.998(MHz)</td>
+<td>53.465(MHz)</td>
+<td>17</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>5</td>
+<td>clk_hdmi</td>
+<td>74.250(MHz)</td>
+<td>79.336(MHz)</td>
+<td>5</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>6</td>
+<td>clk_usb12</td>
+<td>12.000(MHz)</td>
+<td>121.748(MHz)</td>
+<td>6</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>7</td>
+<td>eng_clk375</td>
+<td>37.501(MHz)</td>
+<td>53.937(MHz)</td>
+<td>24</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>8</td>
+<td>clk_86</td>
+<td>85.911(MHz)</td>
+<td>90.119(MHz)</td>
+<td>5</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>9</td>
+<td>ddr_clk4x</td>
+<td>297.000(MHz)</td>
+<td>2240.143(MHz)</td>
+<td>1</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>10</td>
+<td>ddr_clk1x</td>
+<td>74.239(MHz)</td>
+<td>109.428(MHz)</td>
+<td>7</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>11</td>
+<td>fan_ro_en</td>
+<td>100.000(MHz)</td>
+<td>735.226(MHz)</td>
+<td>1</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>12</td>
+<td>u_roosc/n[8]</td>
+<td>100.000(MHz)</td>
+<td>403.398(MHz)</td>
+<td>5</td>
+<td>TOP</td>
+</tr>
+</table>
+<h4>No timing paths to get frequency of clk_135m!</h4>
+<h4>No timing paths to get frequency of clk27_video!</h4>
+<h4>No timing paths to get frequency of clk_hdmi5!</h4>
+<h4>No timing paths to get frequency of clock_reset!</h4>
+<h4>No timing paths to get frequency of spi_sclk!</h4>
+<h2><a name="Total_Negative_Slack_Report">Total Negative Slack Summary:</a></h2>
+<table class="detail_table">
+<tr>
+<th class="label">Clock Name</th>
+<th class="label">Analysis Type</th>
+<th class="label">Endpoints TNS</th>
+<th class="label">Number of Endpoints</th>
+</tr>
+<tr>
+<td>clk_in</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_in</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_108m</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_108m</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_54m</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_54m</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_135m</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_135m</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_27m</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_27m</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk27_video</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk27_video</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_hdmi</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_hdmi</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_hdmi5</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_hdmi5</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_usb12</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_usb12</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>eng_clk375</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>eng_clk375</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_reset</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_reset</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>spi_sclk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>spi_sclk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_86</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_86</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>ddr_clk4x</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>ddr_clk4x</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>ddr_clk1x</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>ddr_clk1x</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>fan_ro_en</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>fan_ro_en</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_roosc/n[8]</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_roosc/n[8]</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+</table>
+<h1><a name="Detail">Timing Details</a></h1>
+<h2><a name="All_Path_Slack_Table">Path Slacks Table:</a></h2>
+<h3><a name="Setup_Slack_Table">Setup Paths Table</a></h3>
+<h4>Report Command:report_timing -setup -max_paths 25 -max_common_paths 1</h4>
+<table class="detail_table">
+<tr>
+<th class="label">Path Number</th>
+<th class="label">Path Slack</th>
+<th class="label">From Node</th>
+<th class="label">To Node</th>
+<th class="label">From Clock</th>
+<th class="label">To Clock</th>
+<th class="label">Relation</th>
+<th class="label">Clock Skew</th>
+<th class="label">Data Delay</th>
+</tr>
+<tr>
+<td>1</td>
+<td>0.544</td>
+<td>u_vdpshim/sc_tag_sc_tag_0_0_s/DO[0]</td>
+<td>u_vdpshim/sc_d0_sc_d0_0_0_s/ADA[7]</td>
+<td>clk_86:[R]</td>
+<td>clk_86:[R]</td>
+<td>11.640</td>
+<td>-0.008</td>
+<td>11.176</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0.668</td>
+<td>u_vdpshim/sc_tag_sc_tag_0_0_s/DO[0]</td>
+<td>u_vdpshim/sc_d1_sc_d1_0_2_s/ADA[12]</td>
+<td>clk_86:[R]</td>
+<td>clk_86:[R]</td>
+<td>11.640</td>
+<td>0.000</td>
+<td>11.043</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.677</td>
+<td>u_vdpshim/spr_addr1_1_s0/Q</td>
+<td>u_vdpshim/vb_dat2_31_s0/D</td>
+<td>clk_86:[R]</td>
+<td>clk_86:[R]</td>
+<td>11.640</td>
+<td>-0.008</td>
+<td>10.982</td>
+</tr>
+<tr>
+<td>24</td>
+<td>0.871</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>splash_req_s0/RESET</td>
+<td>clk_54m:[F]</td>
+<td>clk_54m:[R]</td>
+<td>9.260</td>
+<td>0.005</td>
+<td>8.048</td>
+</tr>
+<tr>
+<td>25</td>
+<td>0.871</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>net_req_s0/RESET</td>
+<td>clk_54m:[F]</td>
+<td>clk_54m:[R]</td>
+<td>9.260</td>
+<td>0.005</td>
+<td>8.048</td>
+</tr>
+</table>
+<h3><a name="Hold_Slack_Table">Hold Paths Table</a></h3>
+<h4>Report Command:report_timing -hold -max_paths 25 -max_common_paths 1</h4>
+<table class="detail_table">
+<tr>
+<th class="label">Path Number</th>
+<th class="label">Path Slack</th>
+<th class="label">From Node</th>
+<th class="label">To Node</th>
+<th class="label">From Clock</th>
+<th class="label">To Clock</th>
+<th class="label">Relation</th>
+<th class="label">Clock Skew</th>
+<th class="label">Data Delay</th>
+</tr>
+<tr>
+<td>1</td>
+<td>0.133</td>
+<td>u_ddr/u_ddr3/gw3_top/u_ddr_phy_top/u_ddr_phy_wds/data_lane_gen[0].u_ddr_phy_data_lane/u_ddr_phy_data_io/oserdes_dq_r_64_s0/Q</td>
+<td>u_ddr/u_ddr3/gw3_top/u_ddr_phy_top/u_ddr_phy_wds/data_lane_gen[0].u_ddr_phy_data_lane/u_ddr_phy_data_io/oserdes_gen[8].u_oser8_mem/D0</td>
+<td>ddr_clk1x:[R]</td>
+<td>ddr_clk1x:[R]</td>
+<td>0.000</td>
+<td>0.000</td>
+<td>0.219</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0.139</td>
+<td>u_ddr/u_ddr3/gw3_top/u_ddr_phy_top/u_ddr_phy_wds/data_lane_gen[0].u_ddr_phy_data_lane/u_ddr_phy_data_io/oserdes_dq_r_51_s0/Q</td>
+<td>u_ddr/u_ddr3/gw3_top/u_ddr_phy_top/u_ddr_phy_wds/data_lane_gen[0].u_ddr_phy_data_lane/u_ddr_phy_data_io/oserdes_gen[6].u_oser8_mem/D3</td>
+<td>ddr_clk1x:[R]</td>
+<td>ddr_clk1x:[R]</td>
+<td>0.000</td>
+<td>0.000</td>
+<td>0.213</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.148</td>
+<td>u_opll/u_mmr/din_copy_5_s0/Q</td>
+<td>u_opll/u_mmr/u_reg/u_reg_ch/reg_fnum[5]_5_s0/D</td>
+<td>clk_54m:[R]</td>
+<td>clk_54m:[R]</td>
+<td>0.000</td>
+<td>-0.177</td>
+<td>0.277</td>
+</tr>
+</table>
+<h3><a name="Recovery_Slack_Table">Recovery Paths Table</a></h3>
+<h4>Report Command:report_timing -recovery -max_paths 25 -max_common_paths 1</h4>
+<table class="detail_table">
+<tr>
+<th class="label">Path Number</th>
+<th class="label">Path Slack</th>
+<th class="label">From Node</th>
+<th class="label">To Node</th>
+<th class="label">From Clock</th>
+<th class="label">To Clock</th>
+<th class="label">Relation</th>
+<th class="label">Clock Skew</th>
+<th class="label">Data Delay</th>
+</tr>
+<tr>
+<td>1</td>
+<td>7.808</td>
+<td>rst86_sync_3_s4/Q</td>
+<td>u_vdpshim/pipe[5]_18_s0/CLEAR</td>
+<td>clk_86:[R]</td>
+<td>clk_86:[R]</td>
+<td>11.640</td>
+<td>0.017</td>
+<td>3.503</td>
+</tr>
+<tr>
+<td>2</td>
+<td>7.808</td>
+<td>rst86_sync_3_s4/Q</td>
+<td>u_vdpshim/pipe[5]_19_s0/CLEAR</td>
+<td>clk_86:[R]</td>
+<td>clk_86:[R]</td>
+<td>11.640</td>
+<td>0.017</td>
+<td>3.503</td>
+</tr>
+<tr>
+<td>3</td>
+<td>7.808</td>
+<td>rst86_sync_3_s4/Q</td>
+<td>u_vdpshim/pipe[4]_18_s0/CLEAR</td>
+<td>clk_86:[R]</td>
+<td>clk_86:[R]</td>
+<td>11.640</td>
+<td>0.017</td>
+<td>3.503</td>
+</tr>
+</table>
+<h3><a name="Removal_Slack_Table">Removal Paths Table</a></h3>
+<h4>Report Command:report_timing -removal -max_paths 25 -max_common_paths 1</h4>
+<table class="detail_table">
+<tr>
+<th class="label">Path Number</th>
+<th class="label">Path Slack</th>
+<th class="label">From Node</th>
+<th class="label">To Node</th>
+<th class="label">From Clock</th>
+<th class="label">To Clock</th>
+<th class="label">Relation</th>
+<th class="label">Clock Skew</th>
+<th class="label">Data Delay</th>
+</tr>
+<tr>
+<td>1</td>
+<td>0.319</td>
+<td>reset3_n_ff_s0/Q</td>
+<td>cfg_init_sr_0_s0/CLEAR</td>
+<td>clk_27m:[R]</td>
+<td>clk_54m:[R]</td>
+<td>0.000</td>
+<td>0.000</td>
+<td>0.306</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0.319</td>
+<td>reset3_n_ff_s0/Q</td>
+<td>cfg_init_sr_1_s0/CLEAR</td>
+<td>clk_27m:[R]</td>
+<td>clk_54m:[R]</td>
+<td>0.000</td>
+<td>0.000</td>
+<td>0.306</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.319</td>
+<td>reset3_n_ff_s0/Q</td>
+<td>cfg_init_sr_2_s0/CLEAR</td>
+<td>clk_27m:[R]</td>
+<td>clk_54m:[R]</td>
+<td>0.000</td>
+<td>0.000</td>
+<td>0.306</td>
+</tr>
+</table>
+
+</body>
+</html>

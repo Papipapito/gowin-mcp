@@ -1,0 +1,177 @@
+//Copyright (C)2014-2026 Gowin Semiconductor Corporation.
+//All rights reserved.
+
+
+1. PnR Messages
+
+  <Report Title>: PnR Report
+  <Design File>: C:\work\fmaxonly\impl\gwsynthesis\fmaxonly.vg
+  <Physical Constraints File>: C:\work\fmaxonly\constraints\fmaxonly.cst
+  <Timing Constraints File>: C:\work\fmaxonly\constraints\fmaxonly.sdc
+  <Tool Version>: V1.9.12.03 (64-bit)
+  <Part Number>: GW5AT-LV60PG484AC1/I0
+  <Device>: GW5AT-60
+  <Device Version>: B
+  <Created Time>:Wed Oct 14 21:11:30 2026
+
+
+2. PnR Details
+
+  Running placement:
+    Placement Phase 0: CPU time = 0h 1m 54s, Elapsed time = 0h 1m 54s
+    Placement Phase 1: CPU time = 0h 0m 8s, Elapsed time = 0h 0m 8s
+    Placement Phase 2: CPU time = 0h 3m 40s, Elapsed time = 0h 3m 40s
+    Placement Phase 3: CPU time = 0h 4m 36s, Elapsed time = 0h 4m 36s
+    Total Placement: CPU time = 0h 10m 17s, Elapsed time = 0h 10m 17s
+ Running routing:
+    Routing Phase 0: CPU time = 0h 0m 0.066s, Elapsed time = 0h 0m 0.066s
+    Routing Phase 1: CPU time = 0h 8m 24s, Elapsed time = 0h 8m 24s
+    Routing Phase 2: CPU time = 0h 0m 2s, Elapsed time = 0h 0m 2s
+    Routing Phase 3: CPU time = 0h 0m 0s, Elapsed time = 0h 0m 0s
+    Total Routing: CPU time = 0h 8m 27s, Elapsed time = 0h 8m 27s
+ Generate output files:
+    CPU time = 0h 0m 14s, Elapsed time = 0h 0m 14s
+
+ Total Time and Memory Usage: CPU time = 0h 18m 58s, Elapsed time = 0h 18m 58s, Peak memory usage = 2173MB
+
+
+3. Resource Usage Summary
+
+  --------------------------------------------------------------------------------
+  Resources                   | Usage                               | Utilization
+  --------------------------------------------------------------------------------
+  Logic                       | 44650/59904                         |  75%
+    --LUT,ALU,ROM16           | 44650(38685 LUT, 5965 ALU, 0 ROM16) | -
+    --SSRAM(RAM16)            | 0                                   | -
+  Register                    | 35542/60780                         |  59%
+    --Logic Register as Latch | 8/59904                             |  <1%
+    --Logic Register as FF    | 35503/59904                         |  60%
+    --I/O Register as Latch   | 0/876                               |  0%
+    --I/O Register as FF      | 31/876                              |  4%
+  CLS                         | 29142/29952                         |  98%
+  I/O Port                    | 146/297                             |  50%
+  I/O Buf                     | 135                                 | -
+    --Input Buf               | 6                                   | -
+    --Output Buf              | 89                                  | -
+    --Inout Buf               | 40                                  | -
+  IOLOGIC                     | 66/293                              | 23%
+    --IDES8_MEM               | 16
+    --OSER8                   | 24
+    --OSER8_MEM               | 20
+    --OSER10                  | 3
+    --IODELAY                 | 16
+  BSRAM                       | 118/118                             | 100%
+    --SP                      | 10
+    --SPX9                    | 1
+    --SDPB                    | 80
+    --SDPX9B                  | 13
+    --DPB                     | 1
+    --DPX9B                   | 1
+    --pROM                    | 11
+    --pROMX9                  | 1
+  DSP                         | 25.5/118                            | 22%
+    --MULT12X12               | 13
+    --MULTALU27X18            | 19
+  ================================================================================
+
+
+
+4. I/O Bank Usage Summary
+
+  --------------------------------------
+  I/O Bank  | Usage       | Utilization 
+  --------------------------------------
+  bank 1   | 25/25       | 100%        
+  bank 2   | 21/26       | 81%         
+  bank 3   | 4/8         | 50%         
+  bank 4   | 9/16        | 57%         
+  bank 5   | 4/34        | 12%         
+  bank 6   | 8/20        | 40%         
+  bank 7   | 11/24       | 46%         
+  bank 8   | 12/24       | 50%         
+  bank 9   | 25/66       | 38%         
+  bank 10  | 16/25       | 64%         
+  bank 11  | 11/25       | 44%         
+  bank 12  | 0/4         | 0%          
+  ======================================
+
+
+5. Clock Resource Usage Summary
+
+  ------------------------------------------
+  Clock Resource| Usage         | Utilization 
+  ------------------------------------------
+  PRIMARY       | 8/8           | 100%
+  LW            | 8/8           | 100%
+  GCLK_PIN      | 22/40         | 55%
+  CLKDIV        | 1/20          | 5%
+  DDRDLL        | 1/5           | 20%
+  DQS           | 2/13          | 16%
+  PLLA          | 6/8           | 75%
+  ==========================================
+
+
+6. Global Clock Signals
+
+  -------------------------------------------
+  Signal         | Global Clock   | Location
+  -------------------------------------------
+  clk_108m       | PRIMARY        |  TR BR BL
+  clk_54m        | PRIMARY        |  TR BR BL
+  clk_27m        | PRIMARY        |  TR BR BL
+  clk_wave375    | PRIMARY        |  TR BR BL
+  clk27_video    | PRIMARY        |  TR BR BL
+  clk_86         | PRIMARY        |  TR BR BL
+  vddr_clk_x1    | PRIMARY        |  TR BR BL
+  clk_usb12      | PRIMARY        |  TR BR
+  ===========================================
+
+
+7. Pinout by Port Name
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Port Name         | Diff Pair | Loc./Bank     | Constraint | Dir.  | Site     | CFG             | IO Type    | Drive | Pull Mode | PCI Clamp | Hysteresis | Open Drain | Slew Rate | Vref       | Single Resistor | Diff Resistor | BankVccio  | Pull Strength | Ctle          | Threshold Offset | ADC_INPUT    
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ex_clk_27m        | -         | V22/7         | Y          | in    | IOB117[B] | EMCCLK          | LVCMOS33   | OFF   | NONE      | OFF       | ON         | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE          | OFF           | bus4         
+s1                | -         | AB13/9        | Y          | in    | IOB54[A] | -               | LVCMOS15   | OFF   | UP        | OFF       | ON         | OFF        | SLOW      | OFF        | OFF             | OFF           | 1.5        | MEDIUM        | NONE          | OFF           | bus4         
+s2                | -         | AA13/9        | Y          | in    | IOB54[B] | -               | LVCMOS15   | OFF   | UP        | OFF       | ON         | OFF        | SLOW      | OFF        | OFF             | OFF           | 1.5        | MEDIUM        | NONE          | OFF           | bus4         
+spi_sclk          | -         | U20/8         | Y          | in    | IOB95[A] | GCLKT_8         | LVCMOS33   | OFF   | NONE      | OFF       | ON         | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE          | OFF           | bus4         
+spi_csn           | -         | Y21/8         | Y          | in    | IOB99[A] | -               | LVCMOS33   | OFF   | UP        | OFF       | ON         | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE          | OFF           | bus4         
+spi_dat           | -         | V20/8         | Y          | in    | IOB95[B] | GCLKC_8         | LVCMOS33   | OFF   | NONE      | OFF       | ON         | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE          | OFF           | bus4         
+esp_rx_i          | -         | N17/6         | Y          | in    | IOB140[A] | -               | LVCMOS33   | OFF   | UP        | OFF       | ON         | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE          | OFF           | bus4         
+bl616_jtagsel     | -         | V14/8         | Y          | in    | IOB91[B] | -               | LVCMOS33   | OFF   | UP        | OFF       | ON         | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE          | OFF           | bus4         
+uart_pmod_rx      | -         | D22/2         | Y          | in    | IOT140[B] | -               | LVCMOS33   | OFF   | UP        | OFF       | ON         | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE          | OFF           | bus0         
+spi_dir           | -         | Y22/8         | Y          | out   | IOB99[B] | D13             | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE          | NONE          | bus4         
+spi_irqn          | -         | AB22/8        | Y          | out   | IOB97[B] | D15             | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE          | NONE          | bus4         
+esp_tx_o          | -         | W21/7         | Y          | out   | IOB104[A] | D09             | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE          | NONE          | bus4         
+=========================================================================================================================================================================================================================
+
+
+
+
+8. All Package Pins
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Loc./Bank| Signal            | Dir.  | Site     | CFG             | IO Type  | Drive | Pull Mode | PCI Clamp | Hysteresis | Open Drain | Slew Rate | Vref       | Single Resistor | Diff Resistor | Bank Vccio | Pull Strength | Ctle          | Threshold Offset | ADC_INPUT    
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+E13/1    | IO_sdram_dq[1]    | io    | IOT78[A] | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE          | OFF           | bus2         
+E14/1    | IO_sdram_dq[0]    | io    | IOT78[B] | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE          | OFF           | bus2         
+F13/1    | O_sdram_dqm[1]    | out   | IOT80[A] | TPLL0_T_IN1/TPLL0_T_FB1 | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE          | NONE          | bus2         
+F14/1    | O_sdram_dqm[0]    | out   | IOT80[B] | TPLL0_C_IN1/TPLL0_C_FB1 | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE          | NONE          | bus2         
+D14/1    | O_sdram_addr[6]   | out   | IOT82[A] | PCIE_HOST_RSTN/TPLL0_T_IN2/TPLL0_T_FB0 | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE          | NONE          | bus2         
+D15/1    | O_sdram_addr[5]   | out   | IOT82[B] | TPLL0_C_IN2/TPLL0_C_FB0 | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE          | NONE          | bus2         
+C14/1    | IO_sdram_dq[3]    | io    | IOT85[A] | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE          | OFF           | -            
+C15/1    | IO_sdram_dq[2]    | io    | IOT85[B] | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE          | OFF           | -            
+E16/1    | O_sdram_addr[4]   | out   | IOT87[A] | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE          | NONE          | bus2         
+D16/1    | O_sdram_wen_n     | out   | IOT87[B] | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE          | NONE          | bus2         
+F16/1    | O_sdram_ras_n     | out   | IOT89[A] | Q0REF_T_IN0     | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE          | NONE          | bus2         
+E17/1    | O_sdram_cas_n     | out   | IOT89[B] | Q0REF_C_IN0     | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE          | NONE          | bus2         
+F15/1    | O_sdram_ba[0]     | out   | IOT91[A] | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE          | NONE          | bus2         
+C13/1    | IO_sdram_dq[5]    | io    | IOT93[A] | -               | LVCMOS33 | 8     | NONE      | OFF       | OFF        | OFF        | SLOW      | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE          | OFF           | bus2         
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+==============================================================================================================================================================================================
+
+

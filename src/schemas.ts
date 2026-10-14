@@ -2,30 +2,41 @@ import { z } from 'zod';
 
 /**
  * Zod schemas shared by every tool: the input shapes clients send and the
- * output shapes published as `outputSchema` / `structuredContent`.
+ * documented shapes of the JSON each tool returns with `format: "json"`.
  *
- * Output schemas mirror the interfaces in types.ts. Keeping them hand-written
- * (rather than deriving the types from zod) keeps the parsers free of any
- * runtime dependency and lets the MCP layer stay thin.
+ * The output schemas are no longer published as MCP `outputSchema`: a tool
+ * that declares one must return `structuredContent` (SDK 1.30 enforces it),
+ * and clients that understand structured content then show that JSON
+ * instead of the compact text rendering, which defeats the default output.
+ * They stay here as the contract the tests hold the JSON to, and mirror the
+ * interfaces in types.ts. Keeping them hand-written (rather than deriving
+ * the types from zod) keeps the parsers free of any runtime dependency.
  */
 
 export const PathArg = z
   .string()
   .describe(
-    'Path to the build: the project directory, its impl/ directory, or the .rpt.txt itself.',
+    'Path to the build: the project directory, its impl/ directory, impl/pnr/ itself, or the .rpt.txt. Either kind of slash.',
   );
 
 export const FormatArg = z
   .enum(['text', 'json'])
   .optional()
-  .describe('Output format. Defaults to text, which is far more compact.');
+  .describe(
+    'Output format. Default text: a compact rendering, returned as the only content. json: the full JSON as text and as structuredContent.',
+  );
 
 export const NameArg = z
   .string()
   .optional()
   .describe(
-    'When several builds share one impl/pnr/, pick this one by name (the <name> of <name>.rpt.txt). Default: the most recent.',
+    'When several builds share one impl/pnr/, pick this one by name (the <name> of <name>.rpt.txt). Default: the most recent, with the others listed under siblings.',
   );
+
+const SiblingNote = {
+  siblings: z.array(z.string()).optional().describe('Other builds in the same impl/pnr/ when none was named.'),
+  note: z.string().optional().describe('Which build was chosen and how to pick another.'),
+};
 
 export const BuildInfo = z.object({
   implDir: z.string(),
@@ -47,7 +58,8 @@ export const ResourceRow = z.object({
   depth: z.number(),
   used: z.number().optional(),
   available: z.number().optional(),
-  utilization: z.string().optional(),
+  utilization: z.string().optional().describe('As the tool rounds it, e.g. "98%".'),
+  utilizationPct: z.number().optional().describe('used/available recomputed, two decimals.'),
   raw: z.string(),
   breakdown: z.record(z.string(), z.number()).optional(),
 });
@@ -67,6 +79,7 @@ export const ResourceReport = z.object({
   ioBanks: z.array(ResourceRow),
   clockResources: z.array(ResourceRow),
   headline: Headline,
+  ...SiblingNote,
 });
 
 export const ClockFmax = z.object({
@@ -93,6 +106,8 @@ export const TimingPath = z.object({
   to: z.string(),
   fromClock: z.string(),
   toClock: z.string(),
+  fromEdge: z.enum(['R', 'F']).optional(),
+  toEdge: z.enum(['R', 'F']).optional(),
   relation: z.number().optional(),
   clockSkew: z.number().optional(),
   dataDelay: z.number().optional(),
@@ -102,11 +117,27 @@ export const TimingReport = z.object({
   fmax: z.array(ClockFmax),
   clocksWithoutPaths: z.array(z.string()),
   tns: z.array(TnsRow),
-  setupPaths: z.array(TimingPath),
+  setupPaths: z.array(TimingPath).describe('Worst slack first.'),
   holdPaths: z.array(TimingPath),
   recoveryPaths: z.array(TimingPath),
   removalPaths: z.array(TimingPath),
+  worstSetup: TimingPath.optional(),
+  worstHold: TimingPath.optional(),
   recognized: z.boolean(),
+  format: z.enum(['html', 'text']).optional().describe('html = _tr_content.html; text = <name>.tr fallback.'),
+});
+
+export const PathsShown = z.object({
+  mode: z.enum(['worst', 'all', 'none']),
+  maxPaths: z.number().optional(),
+  parsed: z.object({ setup: z.number(), hold: z.number(), recovery: z.number(), removal: z.number() }),
+});
+
+export const TimingOutput = z.object({
+  hasTiming: z.boolean(),
+  timing: TimingReport.optional(),
+  paths: PathsShown.optional().describe('How the four path tables were trimmed for output.'),
+  ...SiblingNote,
 });
 
 export const Violation = z.object({
@@ -128,6 +159,31 @@ export const CheckStatus = z
   .enum(['pass', 'fail', 'unknown'])
   .describe('unknown = timing could not be verified; never a pass.');
 
+export const BitstreamInfo = z.object({
+  path: z.string(),
+  toolVersion: z.string().optional(),
+  device: z.string().optional(),
+  deviceVersion: z.string().optional(),
+  partNumber: z.string().optional(),
+  devicePackage: z.string().optional(),
+  checksum: z.string().optional(),
+  userCode: z.string().optional(),
+  createdTime: z.string().optional(),
+  size: z.number(),
+  bodySha256: z.string().describe('SHA-256 of the data lines (no // header), line endings stripped.'),
+  bodyLines: z.number(),
+});
+
+export const ConstraintsInfo = z.object({
+  reported: z.string().optional(),
+  path: z.string().optional(),
+  readable: z.boolean(),
+  clocks: z.array(z.string()),
+  multicyclePaths: z.number(),
+  falsePaths: z.number(),
+  clockGroups: z.number(),
+});
+
 export const BuildSummary = z.object({
   build: BuildInfo,
   resources: Headline,
@@ -139,6 +195,9 @@ export const BuildSummary = z.object({
   }),
   status: CheckStatus,
   clean: z.boolean().describe('True only when status is pass.'),
+  bitstream: BitstreamInfo.optional(),
+  constraints: ConstraintsInfo.optional(),
+  ...SiblingNote,
 });
 
 export const ThresholdFailure = z.object({
@@ -146,6 +205,7 @@ export const ThresholdFailure = z.object({
   name: z.string(),
   value: z.number(),
   limit: z.number(),
+  reported: z.string().optional(),
   detail: z.string(),
 });
 
@@ -160,10 +220,12 @@ export const CheckResult = z.object({
     minFmaxMarginMhz: z.number().optional(),
     failOnMissingTiming: z.boolean(),
     ignoreCrossDomain: z.boolean(),
+    fmaxWaivers: z.array(z.string()),
   }),
   thresholdFailures: z.array(ThresholdFailure),
   ignoredViolations: z.array(Violation),
   notes: z.array(z.string()),
+  ...SiblingNote,
 });
 
 export const FoundBuild = z.object({
@@ -172,6 +234,8 @@ export const FoundBuild = z.object({
   name: z.string(),
   rptTxt: z.string(),
   trContent: z.string().optional(),
+  tr: z.string().optional(),
+  fs: z.string().optional(),
   mtime: z.string(),
   siblings: z.array(z.string()).optional(),
 });
@@ -181,6 +245,8 @@ export const ListedBuild = FoundBuild.extend({
   toolVersion: z.string().optional(),
   createdTime: z.string().optional(),
 });
+
+export const ListOutput = z.object({ builds: z.array(ListedBuild) });
 
 export const ResourceDelta = z.object({
   name: z.string(),
@@ -205,11 +271,14 @@ const DiffSide = z.object({
   createdTime: z.string().optional(),
   toolVersion: z.string().optional(),
   device: z.string().optional(),
+  bitstream: BitstreamInfo.optional(),
+  ...SiblingNote,
 });
 
 export const BuildDiff = z.object({
   before: DiffSide,
   after: DiffSide,
+  comparable: z.boolean().describe('False for different devices: violations unclassified, safe null.'),
   resources: z.array(ResourceDelta),
   fmax: z.array(FmaxDelta),
   violations: z.object({
@@ -217,7 +286,8 @@ export const BuildDiff = z.object({
     fixed: z.array(Violation),
     persisting: z.array(Violation),
   }),
-  safe: z.boolean(),
+  safe: z.boolean().nullable(),
+  sameBitstream: z.boolean().optional(),
   notes: z.array(z.string()),
 });
 
@@ -264,6 +334,7 @@ export const PinReport = z.object({
   ports: z.array(PortPin),
   packagePins: z.array(PackagePin),
   unusedPins: z.number(),
+  ...SiblingNote,
 });
 
 export const LogLevel = z.enum(['WARN', 'ERROR', 'INFO']);
@@ -291,4 +362,5 @@ export const WarningsReport = z.object({
   groups: z.array(WarningGroup),
   unconstrainedClocks: z.array(z.object({ clock: z.string(), noTimingPaths: z.boolean() })),
   notes: z.array(z.string()),
+  ...SiblingNote,
 });

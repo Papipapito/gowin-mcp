@@ -1,6 +1,6 @@
-import { findViolations, timingVerdict } from './analyze.js';
+import { bitstreamOf, findViolations, siblingNote, timingVerdict, verdictOptions } from './analyze.js';
 import type { LoadedBuild } from './analyze.js';
-import type { ResourceRow, Violation } from './types.js';
+import type { BitstreamInfo, ResourceRow, SiblingNote, Violation } from './types.js';
 
 /**
  * Build-to-build diff. The question this answers is "what did my change
@@ -27,9 +27,24 @@ export interface FmaxDelta {
   statusChange?: 'regressed' | 'fixed';
 }
 
+export interface DiffSide extends SiblingNote {
+  name: string;
+  createdTime?: string;
+  toolVersion?: string;
+  device?: string;
+  bitstream?: BitstreamInfo;
+}
+
 export interface BuildDiff {
-  before: { name: string; createdTime?: string; toolVersion?: string; device?: string };
-  after: { name: string; createdTime?: string; toolVersion?: string; device?: string };
+  before: DiffSide;
+  after: DiffSide;
+  /**
+   * False when the two builds target different devices: the resource
+   * numbers mean different things, and a violation only one side has is not
+   * "introduced" or "fixed" — it belongs to another design. Violations are
+   * then left unclassified and `safe` is null.
+   */
+  comparable: boolean;
   resources: ResourceDelta[];
   fmax: FmaxDelta[];
   violations: {
@@ -37,8 +52,16 @@ export interface BuildDiff {
     fixed: Violation[];
     persisting: Violation[];
   };
-  /** True when nothing regressed: no new violations and no clock got slower. */
-  safe: boolean;
+  /**
+   * True when nothing regressed: no violation that the "before" build did
+   * not have, and no clock that went from meeting its constraint to missing
+   * it. A clock that got slower but still meets its constraint is not a
+   * regression here; `fmax[].deltaMhz` has the figure. Null when the builds
+   * are not comparable.
+   */
+  safe: boolean | null;
+  /** True when both bitstreams are present and their bodies hash equal: the same configuration. */
+  sameBitstream?: boolean;
   notes: string[];
 }
 
@@ -64,13 +87,28 @@ function violationKey(v: Violation): string {
   return `${v.kind}:${v.source === 'paths' ? v.fromClock ?? v.clock : v.clock}`;
 }
 
+function side(b: LoadedBuild): DiffSide {
+  const i = b.resources.build;
+  return {
+    name: i.name,
+    createdTime: i.createdTime,
+    toolVersion: i.toolVersion,
+    device: i.device,
+    bitstream: bitstreamOf(b.found),
+    ...siblingNote(b.found),
+  };
+}
+
 export function compareBuilds(before: LoadedBuild, after: LoadedBuild): BuildDiff {
   const notes: string[] = [];
 
   const bDev = before.resources.build.device;
   const aDev = after.resources.build.device;
-  if (bDev && aDev && bDev !== aDev) {
-    notes.push(`Different devices (${bDev} vs ${aDev}) — the numbers are not comparable.`);
+  const comparable = !(bDev && aDev && bDev !== aDev);
+  if (!comparable) {
+    notes.push(
+      `Different devices (${bDev} vs ${aDev}) — the numbers are not comparable; violations were not classified and safe is null.`,
+    );
   }
   const bTool = before.resources.build.toolVersion;
   const aTool = after.resources.build.toolVersion;
@@ -79,11 +117,11 @@ export function compareBuilds(before: LoadedBuild, after: LoadedBuild): BuildDif
       `Different tool versions (${bTool} vs ${aTool}) — some drift is the toolchain, not your RTL.`,
     );
   }
-  for (const [label, side] of [
+  for (const [label, x] of [
     ['before', before],
     ['after', after],
   ] as const) {
-    const v = timingVerdict(side.timing);
+    const v = timingVerdict(x.timing, verdictOptions(x));
     if (v.status === 'unknown') {
       notes.push(`Timing of the "${label}" build is unknown (${v.reason}); only resources were compared for it.`);
     }
@@ -131,7 +169,7 @@ export function compareBuilds(before: LoadedBuild, after: LoadedBuild): BuildDif
       b && a ? Number((a.actualMhz - b.actualMhz).toFixed(3)) : undefined;
 
     let statusChange: FmaxDelta['statusChange'];
-    if (b && a) {
+    if (comparable && b && a) {
       if (!b.failing && a.failing) statusChange = 'regressed';
       else if (b.failing && !a.failing) statusChange = 'fixed';
     }
@@ -148,34 +186,38 @@ export function compareBuilds(before: LoadedBuild, after: LoadedBuild): BuildDif
   fmax.sort((x, y) => (x.deltaMhz ?? 0) - (y.deltaMhz ?? 0));
 
   // --- violations ----------------------------------------------------------
-  const bV = findViolations(before.timing);
-  const aV = findViolations(after.timing);
-  const bKeys = new Set(bV.map(violationKey));
-  const aKeys = new Set(aV.map(violationKey));
-
-  const introduced = aV.filter((v) => !bKeys.has(violationKey(v)));
-  const fixed = bV.filter((v) => !aKeys.has(violationKey(v)));
-  const persisting = aV.filter((v) => bKeys.has(violationKey(v)));
+  const bV = findViolations(before.timing, verdictOptions(before));
+  const aV = findViolations(after.timing, verdictOptions(after));
+  let introduced: Violation[] = [];
+  let fixed: Violation[] = [];
+  let persisting: Violation[] = [];
+  if (comparable) {
+    const bKeys = new Set(bV.map(violationKey));
+    const aKeys = new Set(aV.map(violationKey));
+    introduced = aV.filter((v) => !bKeys.has(violationKey(v)));
+    fixed = bV.filter((v) => !aKeys.has(violationKey(v)));
+    persisting = aV.filter((v) => bKeys.has(violationKey(v)));
+  } else if (bV.length || aV.length) {
+    notes.push(`Violations per side, unclassified: before ${bV.length}, after ${aV.length}.`);
+  }
 
   const regressedClocks = fmax.filter((f) => f.statusChange === 'regressed');
 
+  const b = side(before);
+  const a = side(after);
+  const sameBitstream =
+    b.bitstream && a.bitstream ? b.bitstream.bodySha256 === a.bitstream.bodySha256 : undefined;
+  if (sameBitstream) notes.push('Both .fs files have the same body: the two builds program the device identically.');
+
   return {
-    before: {
-      name: before.resources.build.name,
-      createdTime: before.resources.build.createdTime,
-      toolVersion: bTool,
-      device: bDev,
-    },
-    after: {
-      name: after.resources.build.name,
-      createdTime: after.resources.build.createdTime,
-      toolVersion: aTool,
-      device: aDev,
-    },
+    before: b,
+    after: a,
+    comparable,
     resources,
     fmax,
     violations: { introduced, fixed, persisting },
-    safe: introduced.length === 0 && regressedClocks.length === 0,
+    safe: comparable ? introduced.length === 0 && regressedClocks.length === 0 : null,
+    sameBitstream,
     notes,
   };
 }

@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 
 /**
  * Locates Gowin builds on disk. A build is any directory containing
@@ -15,6 +15,10 @@ export interface FoundBuild {
   rptTxt: string;
   /** Present only when the timing engine ran. */
   trContent?: string;
+  /** The plain-text timing report (`<name>.tr`), read when `trContent` is missing. */
+  tr?: string;
+  /** The bitstream (`<name>.fs`), when it was generated. */
+  fs?: string;
   /** ISO mtime of the .rpt.txt — the report is rewritten on every PnR run. */
   mtime: string;
   /**
@@ -45,6 +49,32 @@ function safeReaddir(dir: string): string[] {
   }
 }
 
+/** The artifacts of one report file, by its siblings in the same directory. */
+function describe(pnrDir: string, implDir: string, entry: string): FoundBuild | undefined {
+  const rptTxt = join(pnrDir, entry);
+  const name = entry.replace(/\.rpt\.txt$/i, '');
+  let mtime = '';
+  try {
+    mtime = statSync(rptTxt).mtime.toISOString();
+  } catch {
+    return undefined;
+  }
+  const optional = (file: string): string | undefined => {
+    const p = join(pnrDir, file);
+    return existsSync(p) ? p : undefined;
+  };
+  return {
+    projectDir: implDir.replace(/[\\/]impl$/i, ''),
+    implDir,
+    name,
+    rptTxt,
+    trContent: optional(`${name}_tr_content.html`),
+    tr: optional(`${name}.tr`),
+    fs: optional(`${name}.fs`),
+    mtime,
+  };
+}
+
 /** Reads the pnr/ directory of a candidate build and returns its artifacts. */
 function inspectImplDir(implDir: string): FoundBuild[] {
   const pnr = join(implDir, 'pnr');
@@ -53,25 +83,8 @@ function inspectImplDir(implDir: string): FoundBuild[] {
   const out: FoundBuild[] = [];
   for (const entry of safeReaddir(pnr)) {
     if (!entry.toLowerCase().endsWith('.rpt.txt')) continue;
-    const rptTxt = join(pnr, entry);
-    const name = entry.replace(/\.rpt\.txt$/i, '');
-    const trContent = join(pnr, `${name}_tr_content.html`);
-
-    let mtime = '';
-    try {
-      mtime = statSync(rptTxt).mtime.toISOString();
-    } catch {
-      continue;
-    }
-
-    out.push({
-      projectDir: implDir.replace(/[\\/]impl$/i, ''),
-      implDir,
-      name,
-      rptTxt,
-      trContent: existsSync(trContent) ? trContent : undefined,
-      mtime,
-    });
+    const b = describe(pnr, implDir, entry);
+    if (b) out.push(b);
   }
   // Newest first, so callers that take the first entry get the latest run.
   out.sort((a, b) => b.mtime.localeCompare(a.mtime));
@@ -111,36 +124,57 @@ export function discoverBuilds(root: string, maxDepth = 8): FoundBuild[] {
   return found;
 }
 
+function sameName(asked: string, name: string): boolean {
+  return asked.toLowerCase().replace(/\.rpt\.txt$/i, '') === name.toLowerCase();
+}
+
 /**
  * Resolves a user-supplied path to a build. Accepts the project directory,
- * the impl/ directory, or the .rpt.txt itself, so callers can paste whatever
- * path they happen to have.
+ * the impl/ directory, impl/pnr/ itself, or the .rpt.txt, so callers can
+ * paste whatever path they happen to have, with either kind of slash.
  *
  * A single impl/pnr/ can hold several builds (one per project file in the
  * Gowin GUI). With no `name`, the most recently written report wins and the
  * others are listed in `siblings` so the choice is visible. With a `name`,
  * that build is returned or an error is thrown — silently falling back to
- * another build would defeat the point of asking.
+ * another build would defeat the point of asking. A `name` that does not
+ * match an explicit .rpt.txt is an error too.
  */
 export function resolveBuild(path: string, name?: string): FoundBuild | undefined {
-  if (path.toLowerCase().endsWith('.rpt.txt') && existsSync(path)) {
-    const implDir = path.replace(/[\\/]pnr[\\/][^\\/]+$/i, '');
-    return inspectImplDir(implDir).find((b) => b.rptTxt === path);
+  const abs = resolve(path);
+
+  if (abs.toLowerCase().endsWith('.rpt.txt')) {
+    if (!existsSync(abs)) return undefined;
+    const pnrDir = dirname(abs);
+    // A report inside impl/pnr/ belongs to that impl/; a report copied
+    // somewhere on its own is described from its own directory.
+    const implDir = basename(pnrDir).toLowerCase() === 'pnr' ? dirname(pnrDir) : pnrDir;
+    // The directory entry, not the spelling the caller used: path.relative
+    // compares case-insensitively on Windows, so "STALE.RPT.TXT" finds
+    // stale.rpt.txt and the build keeps its real name.
+    const entry = safeReaddir(pnrDir).find((e) => relative(join(pnrDir, e), abs) === '') ?? basename(abs);
+    const hit = describe(pnrDir, implDir, entry);
+    if (!hit) return undefined;
+    if (name && !sameName(name, hit.name)) {
+      throw new Error(`The report at ${path} is build "${hit.name}", not "${name}".`);
+    }
+    return hit;
   }
 
-  const candidates = [path, join(path, 'impl'), join(path, 'fpga', 'impl')];
+  const candidates = [abs, join(abs, 'impl'), join(abs, 'fpga', 'impl')];
+  // impl/pnr/ itself: its parent is the impl/ directory.
+  if (basename(abs).toLowerCase() === 'pnr') candidates.unshift(dirname(abs));
   let builds: FoundBuild[] = [];
   for (const c of candidates) {
     builds = inspectImplDir(c);
     if (builds.length) break;
   }
   // Fall back to a shallow search so a repo root still resolves.
-  if (!builds.length) builds = discoverBuilds(path, 3);
+  if (!builds.length) builds = discoverBuilds(abs, 3);
   if (!builds.length) return undefined;
 
   if (name) {
-    const want = name.toLowerCase().replace(/\.rpt\.txt$/i, '');
-    const hit = builds.find((b) => b.name.toLowerCase() === want);
+    const hit = builds.find((b) => sameName(name, b.name));
     if (!hit) {
       throw new Error(
         `No build named "${name}" under ${path}. Available: ${builds.map((b) => b.name).join(', ')}.`,

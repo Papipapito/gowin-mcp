@@ -103,6 +103,9 @@ function parseTable(text: string, heading: RegExp): ResourceRow[] {
       used,
       available,
       utilization: utilCell && utilCell !== '-' ? utilCell : undefined,
+      // The tool rounds its own column (97.30 -> "98%"); keep the exact value.
+      utilizationPct:
+        used != null && available ? Number(((used / available) * 100).toFixed(2)) : undefined,
       raw: usageCell,
       breakdown: parseBreakdown(usageCell),
     });
