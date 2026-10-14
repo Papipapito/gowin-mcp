@@ -1,0 +1,728 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<title>Timing Analysis Report</title>
+<style type="text/css">
+@import url(../temp/style.css);
+body { font-family: Verdana, Arial, sans-serif; font-size: 12px; }
+div#content { width: 100%; margin: }
+hr { margin-top: 30px; margin-bottom: 30px; }
+h1, h3 { text-align: center; }
+h1 {margin-top: 50px; }
+table, th, td {white-space:pre; border: 1px solid #aaa; }
+table { border-collapse:collapse; margin-top: 10px; margin-bottom: 20px; width: 100%; }
+th, td { padding: 5px 5px 5px 5px; }
+th { color: #fff; font-weight: bold; background-color: #0084ff; }
+table.summary_table td.label { width: 24%; min-width: 200px; background-color: #dee8f4; }
+table.detail_table th.label {  min-width: 8%; width: 8%; }
+</style>
+</head>
+<body>
+<div id="content">
+<h1><a name="Message">Timing Messages</a></h1>
+<table class="summary_table">
+<tr>
+<td class="label">Report Title</td>
+<td>Timing Analysis Report</td>
+</tr>
+<tr>
+<td class="label">Design File</td>
+<td>C:\work\demo\impl\gwsynthesis\demo.vg</td>
+</tr>
+<tr>
+<td class="label">Physical Constraints File</td>
+<td>C:\work\demo\constraints\demo.cst</td>
+</tr>
+<tr>
+<td class="label">Timing Constraint File</td>
+<td>C:\work\demo\constraints\demo.sdc</td>
+</tr>
+<tr>
+<td class="label">Tool Version</td>
+<td>V1.9.12.03 (64-bit)</td>
+</tr>
+<tr>
+<td class="label">Part Number</td>
+<td>GW2AR-LV18QN88C8/I7</td>
+</tr>
+<tr>
+<td class="label">Device</td>
+<td>GW2AR-18</td>
+</tr>
+<tr>
+<td class="label">Device Version</td>
+<td>C</td>
+</tr>
+<tr>
+<td class="label">Created Time</td>
+<td>Wed Oct 14 19:22:55 2026
+</td>
+</tr>
+<tr>
+<td class="label">Legal Announcement</td>
+<td>Copyright (C)2014-2026 Gowin Semiconductor Corporation. All rights reserved.</td>
+</tr>
+</table>
+<h1><a name="Summary">Timing Summaries</a></h1>
+<h2><a name="STA_Tool_Run_Summary">STA Tool Run Summary:</a></h2>
+<table class="summary_table">
+<tr>
+<td class="label">Setup Delay Model</td>
+<td>Slow 0.95V 85C C8/I7</td>
+</tr>
+<tr>
+<td class="label">Hold Delay Model</td>
+<td>Fast 1.05V 0C C8/I7</td>
+</tr>
+<tr>
+<td class="label">Numbers of Paths Analyzed</td>
+<td>19166</td>
+</tr>
+<tr>
+<td class="label">Numbers of Endpoints Analyzed</td>
+<td>16350</td>
+</tr>
+<tr>
+<td class="label">Numbers of Falling Endpoints</td>
+<td>49</td>
+</tr>
+<tr>
+<td class="label">Numbers of Setup Violated Endpoints</td>
+<td>0</td>
+</tr>
+<tr>
+<td class="label">Numbers of Hold Violated Endpoints</td>
+<td>0</td>
+</tr>
+</table>
+<h2><a name="Clock_Report">Clock Summary:</a></h2>
+<table class="detail_table">
+<tr>
+<th class="label">NO.</th>
+<th class="label">Clock Name</th>
+<th class="label">Type</th>
+<th class="label">Period</th>
+<th class="label">Frequency(MHz)</th>
+<th class="label">Rise</th>
+<th class="label">Fall</th>
+<th class="label">Source</th>
+<th class="label">Master</th>
+<th class="label">Objects</th>
+</tr>
+<tr>
+<td>1</td>
+<td>clk27</td>
+<td>Base</td>
+<td>37.037</td>
+<td>27.000
+<td>0.000</td>
+<td>18.518</td>
+<td></td>
+<td></td>
+<td>CLK_27M </td>
+</tr>
+<tr>
+<td>2</td>
+<td>clk_108m</td>
+<td>Base</td>
+<td>9.259</td>
+<td>108.003
+<td>0.000</td>
+<td>4.629</td>
+<td></td>
+<td></td>
+<td>u_top/u_pll_main/rpll_inst/CLKOUT </td>
+</tr>
+<tr>
+<td>3</td>
+<td>clk_sdram</td>
+<td>Base</td>
+<td>9.259</td>
+<td>108.003
+<td>0.000</td>
+<td>4.629</td>
+<td></td>
+<td></td>
+<td>u_top/u_pll_main/rpll_inst/CLKOUTP </td>
+</tr>
+<tr>
+<td>4</td>
+<td>clk_54m</td>
+<td>Base</td>
+<td>18.518</td>
+<td>54.002
+<td>0.000</td>
+<td>9.259</td>
+<td></td>
+<td></td>
+<td>u_top/u_pll_main/rpll_inst/CLKOUTD </td>
+</tr>
+<tr>
+<td>5</td>
+<td>clk_135m</td>
+<td>Base</td>
+<td>7.407</td>
+<td>135.007
+<td>0.000</td>
+<td>3.704</td>
+<td></td>
+<td></td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUT </td>
+</tr>
+<tr>
+<td>6</td>
+<td>clk_eng</td>
+<td>Base</td>
+<td>25.000</td>
+<td>40.000
+<td>0.000</td>
+<td>12.500</td>
+<td></td>
+<td></td>
+<td>u_video/u_diveng/CLKOUT </td>
+</tr>
+<tr>
+<td>7</td>
+<td>clk_audio</td>
+<td>Base</td>
+<td>20833.332</td>
+<td>0.048
+<td>0.000</td>
+<td>10416.666</td>
+<td></td>
+<td></td>
+<td>u_video/clk_audio </td>
+</tr>
+<tr>
+<td>8</td>
+<td>u_top/u_div5m4/CLKOUT.default_gen_clk</td>
+<td>Generated</td>
+<td>185.185</td>
+<td>5.400
+<td>0.000</td>
+<td>92.592</td>
+<td>CLK_27M_ibuf/I</td>
+<td>clk27</td>
+<td>u_top/u_div5m4/CLKOUT </td>
+</tr>
+<tr>
+<td>9</td>
+<td>u_top/u_pll_main/rpll_inst/CLKOUTD3.default_gen_clk</td>
+<td>Generated</td>
+<td>27.778</td>
+<td>36.000
+<td>0.000</td>
+<td>13.889</td>
+<td>CLK_27M_ibuf/I</td>
+<td>clk27</td>
+<td>u_top/u_pll_main/rpll_inst/CLKOUTD3 </td>
+</tr>
+<tr>
+<td>10</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTP.default_gen_clk</td>
+<td>Generated</td>
+<td>7.407</td>
+<td>135.000
+<td>0.000</td>
+<td>3.704</td>
+<td>CLK_27M_ibuf/I</td>
+<td>clk27</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTP </td>
+</tr>
+<tr>
+<td>11</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTD.default_gen_clk</td>
+<td>Generated</td>
+<td>14.815</td>
+<td>67.500
+<td>0.000</td>
+<td>7.407</td>
+<td>CLK_27M_ibuf/I</td>
+<td>clk27</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTD </td>
+</tr>
+<tr>
+<td>12</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTD3.default_gen_clk</td>
+<td>Generated</td>
+<td>22.222</td>
+<td>45.000
+<td>0.000</td>
+<td>11.111</td>
+<td>CLK_27M_ibuf/I</td>
+<td>clk27</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTD3 </td>
+</tr>
+<tr>
+<td>13</td>
+<td>u_top/u_div27/CLKOUT.default_gen_clk</td>
+<td>Generated</td>
+<td>37.036</td>
+<td>27.001
+<td>0.000</td>
+<td>18.518</td>
+<td>u_top/u_pll_main/rpll_inst/CLKOUT</td>
+<td>clk_108m</td>
+<td>u_top/u_div27/CLKOUT </td>
+</tr>
+<tr>
+<td>14</td>
+<td>u_top/u_divdac/CLKOUT.default_gen_clk</td>
+<td>Generated</td>
+<td>648.147</td>
+<td>1.543
+<td>0.000</td>
+<td>324.074</td>
+<td>u_top/u_div5m4/CLKOUT</td>
+<td>u_top/u_div5m4/CLKOUT.default_gen_clk</td>
+<td>u_top/u_divdac/CLKOUT </td>
+</tr>
+</table>
+<h2><a name="Max_Frequency_Report">Max Frequency Summary:</a></h2>
+<table>
+<tr>
+<th>NO.</th>
+<th>Clock Name</th>
+<th>Constraint</th>
+<th>Actual Fmax</th>
+<th>Logic Level</th>
+<th>Entity</th>
+</tr>
+<tr>
+<td>1</td>
+<td>clk27</td>
+<td>27.000(MHz)</td>
+<td>82.053(MHz)</td>
+<td>17</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>2</td>
+<td>clk_108m</td>
+<td>108.003(MHz)</td>
+<td>134.918(MHz)</td>
+<td>8</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>3</td>
+<td>clk_54m</td>
+<td>54.002(MHz)</td>
+<td>68.693(MHz)</td>
+<td>13</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>4</td>
+<td>clk_eng</td>
+<td>40.000(MHz)</td>
+<td>38.712(MHz)</td>
+<td>23</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>5</td>
+<td>clk_audio</td>
+<td>0.048(MHz)</td>
+<td>477.166(MHz)</td>
+<td>3</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>6</td>
+<td>u_top/u_div27/CLKOUT.default_gen_clk</td>
+<td>27.001(MHz)</td>
+<td>53.240(MHz)</td>
+<td>23</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>7</td>
+<td>u_top/u_divdac/CLKOUT.default_gen_clk</td>
+<td>1.543(MHz)</td>
+<td>272.114(MHz)</td>
+<td>3</td>
+<td>TOP</td>
+</tr>
+</table>
+<h4>No timing paths to get frequency of clk_sdram!</h4>
+<h4>No timing paths to get frequency of clk_135m!</h4>
+<h4>No timing paths to get frequency of u_top/u_div5m4/CLKOUT.default_gen_clk!</h4>
+<h4>No timing paths to get frequency of u_top/u_pll_main/rpll_inst/CLKOUTD3.default_gen_clk!</h4>
+<h4>No timing paths to get frequency of u_video/u_pll_hdmi/rpll_inst/CLKOUTP.default_gen_clk!</h4>
+<h4>No timing paths to get frequency of u_video/u_pll_hdmi/rpll_inst/CLKOUTD.default_gen_clk!</h4>
+<h4>No timing paths to get frequency of u_video/u_pll_hdmi/rpll_inst/CLKOUTD3.default_gen_clk!</h4>
+<h2><a name="Total_Negative_Slack_Report">Total Negative Slack Summary:</a></h2>
+<table class="detail_table">
+<tr>
+<th class="label">Clock Name</th>
+<th class="label">Analysis Type</th>
+<th class="label">Endpoints TNS</th>
+<th class="label">Number of Endpoints</th>
+</tr>
+<tr>
+<td>clk27</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk27</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_108m</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_108m</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_sdram</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_sdram</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_54m</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_54m</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_135m</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_135m</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_eng</td>
+<td>Setup</td>
+<td>-0.412</td>
+<td>2</td>
+</tr>
+<tr>
+<td>clk_eng</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_audio</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clk_audio</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_top/u_div5m4/CLKOUT.default_gen_clk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_top/u_div5m4/CLKOUT.default_gen_clk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_top/u_pll_main/rpll_inst/CLKOUTD3.default_gen_clk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_top/u_pll_main/rpll_inst/CLKOUTD3.default_gen_clk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTP.default_gen_clk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTP.default_gen_clk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTD.default_gen_clk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTD.default_gen_clk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTD3.default_gen_clk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTD3.default_gen_clk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_top/u_div27/CLKOUT.default_gen_clk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_top/u_div27/CLKOUT.default_gen_clk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_top/u_divdac/CLKOUT.default_gen_clk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_top/u_divdac/CLKOUT.default_gen_clk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+</table>
+<h1><a name="Detail">Timing Details</a></h1>
+<h2><a name="All_Path_Slack_Table">Path Slacks Table:</a></h2>
+<h3><a name="Setup_Slack_Table">Setup Paths Table</a></h3>
+<h4>Report Command:report_timing -setup -max_paths 25 -max_common_paths 1</h4>
+<table class="detail_table">
+<tr>
+<th class="label">Path Number</th>
+<th class="label">Path Slack</th>
+<th class="label">From Node</th>
+<th class="label">To Node</th>
+<th class="label">From Clock</th>
+<th class="label">To Clock</th>
+<th class="label">Relation</th>
+<th class="label">Clock Skew</th>
+<th class="label">Data Delay</th>
+</tr>
+<tr>
+<td>1</td>
+<td>-0.412</td>
+<td>u_top/u_core/u_blkpcm/u_engine/ff_state_0_s0/Q</td>
+<td>u_top/u_core/u_blkpcm/u_engine/ff_acc_3_s0/D</td>
+<td>clk_eng:[R]</td>
+<td>clk_eng:[R]clk_108m:[R]
+<td>9.259</td>
+<td>0.000</td>
+<td>7.377</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2.426</td>
+<td>u_top/u_core/u_sdram/ff_main_timer_0_s2/Q</td>
+<td>u_top/u_core/u_sdram/ff_main_state_4_s0/D</td>
+<td>clk_108m:[R]</td>
+<td>clk_108m:[R]</td>
+<td>9.259</td>
+<td>0.000</td>
+<td>6.798</td>
+</tr>
+<tr>
+<td>3</td>
+<td>2.484</td>
+<td>u_top/u_core/u_sdram/ff_main_timer_0_s2/Q</td>
+<td>u_top/u_core/u_sdram/ff_main_state_2_s0/D</td>
+<td>clk_108m:[R]</td>
+<td>clk_108m:[R]</td>
+<td>9.259</td>
+<td>0.000</td>
+<td>6.740</td>
+</tr>
+</table>
+<h3><a name="Hold_Slack_Table">Hold Paths Table</a></h3>
+<h4>Report Command:report_timing -hold -max_paths 25 -max_common_paths 1</h4>
+<table class="detail_table">
+<tr>
+<th class="label">Path Number</th>
+<th class="label">Path Slack</th>
+<th class="label">From Node</th>
+<th class="label">To Node</th>
+<th class="label">From Clock</th>
+<th class="label">To Clock</th>
+<th class="label">Relation</th>
+<th class="label">Clock Skew</th>
+<th class="label">Data Delay</th>
+</tr>
+<tr>
+<td>1</td>
+<td>0.074</td>
+<td>u_top/u_core/u_blkpcm/u_engine/TL_RAM_D_0_s0/Q</td>
+<td>u_top/u_core/u_blkpcm/u_engine/TL_RAM/mem_mem_0_0_s/DI[0]</td>
+<td>clk_eng:[R]</td>
+<td>clk_eng:[R]</td>
+<td>0.000</td>
+<td>0.000</td>
+<td>0.323</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0.074</td>
+<td>u_top/u_core/u_blkpcm/u_engine/EVOL_RAM_D_5_s6/Q</td>
+<td>u_top/u_core/u_blkpcm/u_engine/EVOL_RAM/mem_mem_0_0_s/DI[5]</td>
+<td>clk_eng:[R]</td>
+<td>clk_eng:[R]</td>
+<td>0.000</td>
+<td>0.000</td>
+<td>0.323</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.074</td>
+<td>u_top/u_core/u_blkpcm/u_engine/SO_RAM_D_5_s0/Q</td>
+<td>u_top/u_core/u_blkpcm/u_engine/SO_RAM/mem_mem_0_0_s/DI[5]</td>
+<td>clk_eng:[R]</td>
+<td>clk_eng:[R]</td>
+<td>0.000</td>
+<td>0.000</td>
+<td>0.323</td>
+</tr>
+</table>
+<h3><a name="Recovery_Slack_Table">Recovery Paths Table</a></h3>
+<h4>Report Command:report_timing -recovery -max_paths 25 -max_common_paths 1</h4>
+<table class="detail_table">
+<tr>
+<th class="label">Path Number</th>
+<th class="label">Path Slack</th>
+<th class="label">From Node</th>
+<th class="label">To Node</th>
+<th class="label">From Clock</th>
+<th class="label">To Clock</th>
+<th class="label">Relation</th>
+<th class="label">Clock Skew</th>
+<th class="label">Data Delay</th>
+</tr>
+<tr>
+<td>1</td>
+<td>7.525</td>
+<td>u_top/u_core/por_sync_3_s0/Q</td>
+<td>u_top/u_core/u_bridge/st_0_s1/CLEAR</td>
+<td>clk_54m:[R]</td>
+<td>clk_108m:[R]</td>
+<td>9.259</td>
+<td>0.000</td>
+<td>1.664</td>
+</tr>
+<tr>
+<td>2</td>
+<td>7.525</td>
+<td>u_top/u_core/por_sync_3_s0/Q</td>
+<td>u_top/u_core/u_bridge/st_1_s1/CLEAR</td>
+<td>clk_54m:[R]</td>
+<td>clk_108m:[R]</td>
+<td>9.259</td>
+<td>0.000</td>
+<td>1.664</td>
+</tr>
+<tr>
+<td>3</td>
+<td>7.525</td>
+<td>u_top/u_core/por_sync_3_s0/Q</td>
+<td>u_top/u_core/u_bridge/st_2_s1/CLEAR</td>
+<td>clk_54m:[R]</td>
+<td>clk_108m:[R]</td>
+<td>9.259</td>
+<td>0.000</td>
+<td>1.664</td>
+</tr>
+</table>
+<h3><a name="Removal_Slack_Table">Removal Paths Table</a></h3>
+<h4>Report Command:report_timing -removal -max_paths 25 -max_common_paths 1</h4>
+<table class="detail_table">
+<tr>
+<th class="label">Path Number</th>
+<th class="label">Path Slack</th>
+<th class="label">From Node</th>
+<th class="label">To Node</th>
+<th class="label">From Clock</th>
+<th class="label">To Clock</th>
+<th class="label">Relation</th>
+<th class="label">Clock Skew</th>
+<th class="label">Data Delay</th>
+</tr>
+<tr>
+<td>1</td>
+<td>0.925</td>
+<td>u_top/u_core/rst_sync_2_s0/Q</td>
+<td>u_top/u_core/u_blkpcm/st_t_s2/CLEAR</td>
+<td>clk_54m:[R]</td>
+<td>clk_54m:[R]</td>
+<td>0.000</td>
+<td>0.000</td>
+<td>0.936</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0.925</td>
+<td>u_top/u_core/rst_sync_2_s0/Q</td>
+<td>u_top/u_core/u_blkpcm/rd_t_s2/CLEAR</td>
+<td>clk_54m:[R]</td>
+<td>clk_54m:[R]</td>
+<td>0.000</td>
+<td>0.000</td>
+<td>0.936</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.925</td>
+<td>u_top/u_core/rst_sync_2_s0/Q</td>
+<td>u_top/u_core/u_blkpcm/wr_t_s2/CLEAR</td>
+<td>clk_54m:[R]</td>
+<td>clk_54m:[R]</td>
+<td>0.000</td>
+<td>0.000</td>
+<td>0.936</td>
+</tr>
+</table>
+
+</body>
+</html>

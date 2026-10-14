@@ -1,0 +1,169 @@
+//Copyright (C)2014-2023 Gowin Semiconductor Corporation.
+//All rights reserved.
+
+
+1. PnR Messages
+
+  <Report Title>: PnR Report
+  <Design File>: C:\work\legacy\impl\gwsynthesis\legacy.vg
+  <Physical Constraints File>: C:\work\legacy\legacy.cst
+  <Timing Constraints File>: C:\work\legacy\legacy.sdc
+  <PnR Version>: V1.9.9 Beta-4 Education
+  <Part Number>: GW2AR-LV18QN88C8/I7
+  <Device>: GW2AR-18
+  <Device Version>: C
+  <Created Time>:Sun Sep 13 00:55:50 2026
+
+
+2. PnR Details
+
+  Running placement:
+    Placement Phase 0: CPU time = 0h 0m 2s, Elapsed time = 0h 0m 2s
+    Placement Phase 1: CPU time = 0h 0m 0.386s, Elapsed time = 0h 0m 0.386s
+    Placement Phase 2: CPU time = 0h 0m 6s, Elapsed time = 0h 0m 6s
+    Placement Phase 3: CPU time = 0h 0m 19s, Elapsed time = 0h 0m 19s
+    Total Placement: CPU time = 0h 0m 28s, Elapsed time = 0h 0m 28s
+ Running routing:
+    Routing Phase 0: CPU time = 0h 0m 0.005s, Elapsed time = 0h 0m 0.004s
+    Routing Phase 1: CPU time = 0h 0m 0.544s, Elapsed time = 0h 0m 0.544s
+    Routing Phase 2: CPU time = 0h 0m 10s, Elapsed time = 0h 0m 10s
+    Routing Phase 3: CPU time = 0h 0m 0s, Elapsed time = 0h 0m 0s
+    Total Routing: CPU time = 0h 0m 11s, Elapsed time = 0h 0m 11s
+ Generate output files:
+    CPU time = 0h 0m 4s, Elapsed time = 0h 0m 4s
+
+ Total Time and Memory Usage: CPU time = 0h 0m 42s, Elapsed time = 0h 0m 42s, Peak memory usage = 284MB
+
+
+3. Resource Usage Summary
+
+  ----------------------------------------------------------
+  Resources                   | Usage
+  ----------------------------------------------------------
+  Logic                       | 8940/20736  44%
+    --LUT,ALU,ROM16           | 8790(7949 LUT, 841 ALU, 0 ROM16)
+    --SSRAM(RAM16)            | 25
+  Register                    | 3987/15915  26%
+    --Logic Register as Latch | 0/15552  0%
+    --Logic Register as FF    | 3938/15552  26%
+    --I/O Register as Latch   | 0/363  0%
+    --I/O Register as FF      | 49/363  14%
+  CLS                         | 5901/10368  57%
+  I/O Port                    | 54
+  I/O Buf                     | 44
+    --Input Buf               | 6
+    --Output Buf              | 30
+    --Inout Buf               | 8
+  IOLOGIC                     | 5%
+    --OSER10                  | 3
+  BSRAM                       | 33%
+    --SP                      | 5
+    --SDPX9B                  | 1
+    --pROM                    | 9
+  DSP                         | 0%
+  PLL                         | 2/2  100%
+  DCS                         | 0/8  0%
+  DQCE                        | 0/24  0%
+  OSC                         | 0/1  0%
+  CLKDIV                      | 2/8  25%
+  DLLDLY                      | 0/8  0%
+  DQS                         | 0/1  0%
+  DHCEN                       | 0/16  0%
+  ==========================================================
+
+
+
+4. I/O Bank Usage Summary
+
+  -----------------------
+  I/O Bank  | Usage       
+  -----------------------
+  bank 0   | 8/8(100%)   
+  bank 1   | 8/9(88%)    
+  bank 2   | 0/4(0%)     
+  bank 3   | 14/17(82%)  
+  bank 4   | 8/8(100%)   
+  bank 5   | 9/10(90%)   
+  bank 6   | 6/9(66%)    
+  bank 7   | 1/1(100%)   
+  =======================
+
+
+5. Global Clock Usage Summary
+
+  -------------------------------
+  Global Clock  | Usage       
+  -------------------------------
+  PRIMARY       | 5/8(63%)
+  LW            | 8/8(100%)
+  GCLK_PIN      | 3/5(60%)
+  PLL           | 2/2(100%)
+  CLKDIV        | 2/8(25%)
+  DLLDLY        | 0/8(0%)
+  ===============================
+
+
+6. Global Clock Signals
+
+  -------------------------------------------
+  Signal         | Global Clock   | Location
+  -------------------------------------------
+  ex_clk_27m_d   | PRIMARY        |  BL
+  O_sdram_clk_d  | PRIMARY        |  TR TL
+  clk_27m        | PRIMARY        |  TR TL BR BL
+  clk_54m        | PRIMARY        |  TL BR BL
+  u_vdp/clk_audio | PRIMARY        |  BR BL
+  ff_flash_addr_23_11| LW             |  -
+  bus_reset_n    | LW             |  -
+  Reset_s        | LW             |  -
+  ===========================================
+
+
+7. Pinout by Port Name
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Port Name              | Diff Pair | Loc./Bank     | Constraint | Dir.  | Site     | IO Type    | Drive | Pull Mode | PCI Clamp | Hysteresis | Open Drain | Vref       | Single Resistor | Diff Resistor | BankVccio 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ex_clk_27m             |           | 4/7           | Y          | in    | IOL7[A]  | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | OFF             | NA            | 3.3       
+s1                     |           | 88/3          | Y          | in    | IOR30[A] | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | OFF             | NA            | 3.3       
+s2                     |           | 87/3          | Y          | in    | IOR30[B] | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | OFF             | NA            | 3.3       
+ex_bus_wait_n          |           | 27/5          | Y          | in    | IOB8[A]  | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3       
+ex_bus_int_n           |           | 28/5          | Y          | in    | IOB8[B]  | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3       
+ex_bus_reset_n         |           | 86/0          | Y          | in    | IOT4[A]  | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3       
+ex_bus_clk_3m6         |           | 49/3          | Y          | in    | IOR49[A] | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | OFF             | NA            | 3.3       
+uart_rx                |           | 77/1          | Y          | in    | IOT30[A] | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3       
+kbd_uart_rx_pin        |           | 75/1          | Y          | in    | IOT34[A] | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3       
+ex_msel[0]             |           | 73/1          | Y          | out   | IOT40[A] | LVCMOS33   | 8     | UP        | NA        | NA         | OFF        | NA         | NA              | NA            | 3.3       
+ex_msel[1]             |           | 74/1          | Y          | out   | IOT34[B] | LVCMOS33   | 8     | UP        | NA        | NA         | OFF        | NA         | NA              | NA            | 3.3       
+ex_bus_m1_n            |           | 15/6          | Y          | out   | IOL47[A] | LVCMOS33   | 8     | UP        | NA        | NA         | OFF        | NA         | OFF             | NA            | 3.3       
+==============================================================================================================================================================================================================================
+
+
+
+
+8. All Package Pins
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Loc./Bank| Signal                 | Dir.  | Site     | IO Type  | Drive | Pull Mode | PCI Clamp | Hysteresis | Open Drain | Vref       | Single Resistor | Diff Resistor | Bank Vccio
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+86/0     | ex_bus_reset_n         | in    | IOT4[A]  | LVCMOS33 | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3  
+85/0     | sd_dat1                | out   | IOT4[B]  | LVCMOS33 | 8     | UP        | NA        | NA         | OFF        | NA         | NA              | NA            | 3.3  
+84/0     | sd_dat0                | io    | IOT6[A]  | LVCMOS33 | 8     | UP        | NA        | NONE       | OFF        | NA         | NA              | NA            | 3.3  
+83/0     | sd_sclk                | out   | IOT6[B]  | LVCMOS33 | 8     | UP        | NA        | NA         | OFF        | NA         | NA              | NA            | 3.3  
+82/0     | sd_cmd                 | io    | IOT17[A] | LVCMOS33 | 8     | UP        | NA        | NONE       | OFF        | NA         | NA              | NA            | 3.3  
+81/0     | sd_dat3                | out   | IOT17[B] | LVCMOS33 | 8     | UP        | NA        | NA         | OFF        | NA         | NA              | NA            | 3.3  
+80/0     | sd_dat2                | out   | IOT27[A] | LVCMOS33 | 8     | UP        | NA        | NA         | OFF        | NA         | NA              | NA            | 3.3  
+79/0     | uart_tx                | out   | IOT27[B] | LVCMOS33 | 8     | UP        | NA        | NA         | OFF        | NA         | NA              | NA            | 3.3  
+77/1     | uart_rx                | in    | IOT30[A] | LVCMOS33 | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3  
+76/1     | ex_bus_mp[7]           | out   | IOT30[B] | LVCMOS33 | 8     | UP        | NA        | NA         | OFF        | NA         | NA              | NA            | 3.3  
+75/1     | kbd_uart_rx_pin        | in    | IOT34[A] | LVCMOS33 | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3  
+74/1     | ex_msel[1]             | out   | IOT34[B] | LVCMOS33 | 8     | UP        | NA        | NA         | OFF        | NA         | NA              | NA            | 3.3  
+73/1     | ex_msel[0]             | out   | IOT40[A] | LVCMOS33 | 8     | UP        | NA        | NA         | OFF        | NA         | NA              | NA            | 3.3  
+72/1     | ex_bus_wr_n            | out   | IOT40[B] | LVCMOS33 | 8     | UP        | NA        | NA         | OFF        | NA         | NA              | NA            | 3.3  
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+===================================================================================================================================================================================================
+
+
