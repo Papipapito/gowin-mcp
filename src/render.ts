@@ -19,6 +19,11 @@ export function buildHeader(b: LoadedBuild): string[] {
     .filter(Boolean)
     .join('   ');
   if (timing) lines.push(`Built: ${timing}`);
+  if (b.found.siblings?.length) {
+    lines.push(
+      `Note:  newest of ${b.found.siblings.length + 1} builds in ${b.found.implDir}; others: ${b.found.siblings.join(', ')} (pass name to pick one)`,
+    );
+  }
   if (!b.timing) lines.push('(no timing report found — resources only)');
   return lines;
 }

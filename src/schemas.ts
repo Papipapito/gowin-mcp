@@ -131,6 +131,7 @@ export const FoundBuild = z.object({
   rptTxt: z.string(),
   trContent: z.string().optional(),
   mtime: z.string(),
+  siblings: z.array(z.string()).optional(),
 });
 
 export const ListedBuild = FoundBuild.extend({

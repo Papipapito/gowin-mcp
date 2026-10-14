@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { closeSync, openSync, readFileSync, readSync } from 'node:fs';
 import { basename } from 'node:path';
 import type { BuildInfo, ResourceReport, ResourceRow } from './types.js';
 
@@ -108,6 +108,30 @@ function parseTable(text: string, heading: RegExp): ResourceRow[] {
     });
   }
   return rows;
+}
+
+/**
+ * Reads only the "PnR Messages" header of a report — device, tool version,
+ * timestamps. The header sits in the first kilobyte, so this avoids loading
+ * the (50-120 KB) report body, let alone the timing HTML, when listing many
+ * builds.
+ */
+export function readBuildHeader(rptTxtPath: string): BuildInfo {
+  const name = basename(rptTxtPath).replace(/\.rpt\.txt$/i, '');
+  const implDir = rptTxtPath.replace(/[\\/]pnr[\\/][^\\/]+$/i, '');
+
+  const buf = Buffer.alloc(4096);
+  const fd = openSync(rptTxtPath, 'r');
+  let head = '';
+  try {
+    head = buf.toString('utf8', 0, readSync(fd, buf, 0, buf.length, 0));
+  } finally {
+    closeSync(fd);
+  }
+  // "Created Time" is the last header field; if the chunk stopped short of
+  // it, the file has an unusual preamble — fall back to reading all of it.
+  if (!/<Created Time>/.test(head)) head = readFileSync(rptTxtPath, 'utf8');
+  return parseHeader(head, implDir, name);
 }
 
 function pick(rows: ResourceRow[], name: string): ResourceRow | undefined {

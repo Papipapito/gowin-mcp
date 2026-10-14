@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { discoverBuilds, resolveBuild } from './discover.js';
 import { findViolations, loadBuild, summarize } from './analyze.js';
+import { readBuildHeader } from './parse-resources.js';
 import type { LoadedBuild } from './analyze.js';
 import { compareBuilds } from './compare.js';
 import * as S from './schemas.js';
@@ -27,8 +28,8 @@ const READ_ONLY = {
   openWorldHint: false,
 } as const;
 
-function must(path: string): LoadedBuild {
-  const found = resolveBuild(path);
+function must(path: string, name?: string): LoadedBuild {
+  const found = resolveBuild(path, name);
   if (!found) {
     throw new Error(
       `No Gowin build found at ${path}. Expected an impl/pnr/<name>.rpt.txt below it.`,
@@ -91,13 +92,15 @@ export function createServer(): McpServer {
     },
     guarded(({ root, maxDepth, format }) => {
       const builds = discoverBuilds(root, maxDepth ?? 8).map((b) => {
-        let device: string | undefined;
+        // Only the header is needed here; parsing the full report (and the
+        // timing HTML behind it) for every build made listing a tree slow.
         try {
-          device = loadBuild(b).resources.build.device;
+          const h = readBuildHeader(b.rptTxt);
+          return { ...b, device: h.device, toolVersion: h.toolVersion, createdTime: h.createdTime };
         } catch {
-          /* report unreadable; path is still worth listing */
+          // Report unreadable; the path is still worth listing.
+          return { ...b, device: undefined, toolVersion: undefined, createdTime: undefined };
         }
-        return { ...b, device };
       });
       const lines = builds.map(
         (b) =>
@@ -116,12 +119,12 @@ export function createServer(): McpServer {
       title: 'Build summary',
       description:
         'Headline report for one build: device, resource usage, fMax per clock, and every timing violation. Start here.',
-      inputSchema: { path: S.PathArg, format: S.FormatArg },
+      inputSchema: { path: S.PathArg, name: S.NameArg, format: S.FormatArg },
       outputSchema: S.BuildSummary.shape,
       annotations: READ_ONLY,
     },
-    guarded(({ path, format }) => {
-      const b = must(path);
+    guarded(({ path, name, format }) => {
+      const b = must(path, name);
       const text = [buildHeader(b).join('\n'), renderResources(b, false), renderViolations(b), renderFmax(b)]
         .filter(Boolean)
         .join('\n');
@@ -137,6 +140,7 @@ export function createServer(): McpServer {
         'Full resource usage for one build: logic, CLS, registers, BSRAM, DSP, I/O banks and clock resources.',
       inputSchema: {
         path: S.PathArg,
+        name: S.NameArg,
         format: S.FormatArg,
         includeBanks: z
           .boolean()
@@ -146,8 +150,8 @@ export function createServer(): McpServer {
       outputSchema: S.ResourceReport.shape,
       annotations: READ_ONLY,
     },
-    guarded(({ path, format, includeBanks }) => {
-      const b = must(path);
+    guarded(({ path, name, format, includeBanks }) => {
+      const b = must(path, name);
       const text = [buildHeader(b).join('\n'), renderResources(b, includeBanks !== false)].join('\n');
       return result(b.resources, text, format);
     }),
@@ -161,14 +165,15 @@ export function createServer(): McpServer {
         'Timing detail for one build: fMax per clock, total negative slack, and the worst setup/hold paths with their endpoints.',
       inputSchema: {
         path: S.PathArg,
+        name: S.NameArg,
         format: S.FormatArg,
         maxPaths: z.number().optional().describe('Worst paths to show, default 10.'),
       },
       outputSchema: { hasTiming: z.boolean(), timing: S.TimingReport.optional() },
       annotations: READ_ONLY,
     },
-    guarded(({ path, format, maxPaths }) => {
-      const b = must(path);
+    guarded(({ path, name, format, maxPaths }) => {
+      const b = must(path, name);
       if (!b.timing) {
         return result({ hasTiming: false }, 'No timing report for this build.', format);
       }
@@ -186,12 +191,12 @@ export function createServer(): McpServer {
       title: 'Timing gate',
       description:
         'Pass/fail gate. Returns only the timing violations, with the offending path for each. Empty means the build closed timing.',
-      inputSchema: { path: S.PathArg, format: S.FormatArg },
+      inputSchema: { path: S.PathArg, name: S.NameArg, format: S.FormatArg },
       outputSchema: { clean: z.boolean(), violations: z.array(S.Violation) },
       annotations: READ_ONLY,
     },
-    guarded(({ path, format }) => {
-      const b = must(path);
+    guarded(({ path, name, format }) => {
+      const b = must(path, name);
       const v = findViolations(b.timing);
       const text = v.length
         ? `FAIL — ${v.length} violation(s)${renderViolations(b)}`
@@ -208,14 +213,16 @@ export function createServer(): McpServer {
         'Diff two builds: resource deltas, fMax change per clock, and which violations were introduced, fixed, or persist. Use this to see what a change actually cost.',
       inputSchema: {
         before: S.PathArg.describe('Baseline build path.'),
+        beforeName: S.NameArg,
         after: S.PathArg.describe('New build path.'),
+        afterName: S.NameArg,
         format: S.FormatArg,
       },
       outputSchema: S.BuildDiff.shape,
       annotations: READ_ONLY,
     },
-    guarded(({ before, after, format }) => {
-      const diff = compareBuilds(must(before), must(after));
+    guarded(({ before, beforeName, after, afterName, format }) => {
+      const diff = compareBuilds(must(before, beforeName), must(after, afterName));
       return result(diff, renderDiff(diff), format);
     }),
   );

@@ -15,7 +15,13 @@ export interface FoundBuild {
   rptTxt: string;
   /** Present only when the timing engine ran. */
   trContent?: string;
+  /** ISO mtime of the .rpt.txt — the report is rewritten on every PnR run. */
   mtime: string;
+  /**
+   * Names of the other builds sharing this impl/pnr/ when the caller did not
+   * pick one explicitly. Set by resolveBuild only.
+   */
+  siblings?: string[];
 }
 
 const SKIP = new Set([
@@ -67,6 +73,8 @@ function inspectImplDir(implDir: string): FoundBuild[] {
       mtime,
     });
   }
+  // Newest first, so callers that take the first entry get the latest run.
+  out.sort((a, b) => b.mtime.localeCompare(a.mtime));
   return out;
 }
 
@@ -107,19 +115,41 @@ export function discoverBuilds(root: string, maxDepth = 8): FoundBuild[] {
  * Resolves a user-supplied path to a build. Accepts the project directory,
  * the impl/ directory, or the .rpt.txt itself, so callers can paste whatever
  * path they happen to have.
+ *
+ * A single impl/pnr/ can hold several builds (one per project file in the
+ * Gowin GUI). With no `name`, the most recently written report wins and the
+ * others are listed in `siblings` so the choice is visible. With a `name`,
+ * that build is returned or an error is thrown — silently falling back to
+ * another build would defeat the point of asking.
  */
-export function resolveBuild(path: string): FoundBuild | undefined {
+export function resolveBuild(path: string, name?: string): FoundBuild | undefined {
   if (path.toLowerCase().endsWith('.rpt.txt') && existsSync(path)) {
     const implDir = path.replace(/[\\/]pnr[\\/][^\\/]+$/i, '');
     return inspectImplDir(implDir).find((b) => b.rptTxt === path);
   }
 
   const candidates = [path, join(path, 'impl'), join(path, 'fpga', 'impl')];
+  let builds: FoundBuild[] = [];
   for (const c of candidates) {
-    const builds = inspectImplDir(c);
-    if (builds.length) return builds[0];
+    builds = inspectImplDir(c);
+    if (builds.length) break;
+  }
+  // Fall back to a shallow search so a repo root still resolves.
+  if (!builds.length) builds = discoverBuilds(path, 3);
+  if (!builds.length) return undefined;
+
+  if (name) {
+    const want = name.toLowerCase().replace(/\.rpt\.txt$/i, '');
+    const hit = builds.find((b) => b.name.toLowerCase() === want);
+    if (!hit) {
+      throw new Error(
+        `No build named "${name}" under ${path}. Available: ${builds.map((b) => b.name).join(', ')}.`,
+      );
+    }
+    return hit;
   }
 
-  // Fall back to a shallow search so a repo root still resolves.
-  return discoverBuilds(path, 3)[0];
+  const [chosen, ...rest] = builds;
+  const siblings = rest.filter((b) => b.implDir === chosen.implDir).map((b) => b.name);
+  return siblings.length ? { ...chosen, siblings } : chosen;
 }
