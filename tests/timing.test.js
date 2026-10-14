@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import { join } from 'node:path';
 
 import { parseTimingHtml, parseTimingReport } from '../dist/parse-timing.js';
-import { DEMO, FAILING } from './helpers.js';
+import { DEMO, FAILING, XDOMAIN } from './helpers.js';
 
 const DEMO_HTML = join(DEMO, 'impl', 'pnr', 'demo_tr_content.html');
 const FAIL_HTML = join(FAILING, 'impl', 'pnr', 'fail_tr_content.html');
+const XDOMAIN_HTML = join(XDOMAIN, 'impl', 'pnr', 'xdomain_tr_content.html');
 
 test('setup, hold, recovery and removal tables are kept apart', () => {
   const t = parseTimingReport(DEMO_HTML);
@@ -43,6 +44,23 @@ test('a failing build reports negative TNS and a failing fMax', () => {
   assert.deepEqual(bad.map((r) => [r.clock, r.analysis, r.tns, r.endpoints]), [['clk_eng', 'Setup', -0.412, 2]]);
   assert.deepEqual(t.fmax.filter((f) => f.failing).map((f) => f.clock), ['clk_eng']);
   assert.equal([...t.setupPaths].sort((a, b) => a.slack - b.slack)[0].slack, -0.412);
+});
+
+test('a CRLF report with a clean TNS but negative cross-domain paths', () => {
+  const t = parseTimingReport(XDOMAIN_HTML);
+  assert.equal(t.recognized, true);
+  assert.equal(t.tns.length, 38);
+  assert.ok(t.tns.every((r) => r.tns === 0));
+  assert.equal(t.fmax.length, 6);
+  assert.ok(t.fmax.every((f) => !f.failing));
+  assert.equal(t.setupPaths.length, 18);
+  assert.equal(t.setupPaths.filter((p) => p.slack < 0).length, 14);
+  assert.ok(t.setupPaths.filter((p) => p.slack < 0).every((p) => p.fromClock === 'clock_54m' && p.toClock === 'clock_27m'));
+  assert.equal(t.holdPaths.length, 6);
+  assert.ok(t.holdPaths.every((p) => p.slack < 0 && p.fromClock !== p.toClock));
+  assert.equal(t.recoveryPaths.length, 3);
+  assert.equal(t.removalPaths.length, 3);
+  assert.equal(t.clocksWithoutPaths.length, 13);
 });
 
 test('an HTML without the summary tables is not recognised', () => {

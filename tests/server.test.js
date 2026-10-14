@@ -2,7 +2,7 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
 
-import { DEMO, FAILING, FIXTURES, LEGACY, pinFixtureTimes, startServer } from './helpers.js';
+import { DEMO, FAILING, FIXTURES, LEGACY, XDOMAIN, pinFixtureTimes, startServer } from './helpers.js';
 
 let server;
 before(async () => {
@@ -64,6 +64,36 @@ test('gowin_check: pass, fail and thresholds', async () => {
   assert.match(thr.text, /CLS at 77% exceeds maxUtilization 60%/);
 });
 
+test('gowin_check: cross-domain paths the TNS omits fail, unless ignoreCrossDomain', async () => {
+  const fail = await server.call('gowin_check', { path: XDOMAIN });
+  assert.equal(fail.isError, false);
+  assert.match(fail.text, /^FAIL — 5 timing violations/);
+  assert.match(fail.text, /setup clock_54m -> clock_27m\s+-2\.09 ns/);
+  assert.match(fail.text, /5 of these are not counted in Gowin's TNS summary/);
+  assert.match(fail.text, /note: .*Gowin's TNS does not count paths between clock domains/);
+  assert.match(fail.text, /set_false_path \/ set_clock_groups/);
+  assert.equal(fail.structured.status, 'fail');
+  assert.equal(fail.structured.violations[0].source, 'paths');
+  assert.equal(fail.structured.violations[0].crossDomain, true);
+
+  const pass = await server.call('gowin_check', { path: XDOMAIN, ignoreCrossDomain: true });
+  assert.match(pass.text, /^PASS — no timing violations/);
+  assert.match(pass.text, /ignored setup clock_54m -> clock_27m -2\.09 ns/);
+  assert.match(pass.text, /note: 5 cross-domain path violations ignored/);
+  assert.equal(pass.structured.status, 'pass');
+  assert.equal(pass.structured.ok, true);
+  assert.equal(pass.structured.ignoredViolations.length, 5);
+
+  const summary = await server.call('gowin_summary', { path: XDOMAIN });
+  assert.equal(summary.structured.status, 'fail');
+  assert.match(summary.text, /Timing: 5 VIOLATIONS/);
+
+  const diff = await server.call('gowin_compare', { before: XDOMAIN, after: XDOMAIN });
+  assert.equal(diff.structured.violations.persisting.length, 5);
+  assert.match(diff.text, /still\s+setup clock_54m -> clock_27m -2\.09ns/);
+  assert.match(diff.text, /VERDICT: no regression/);
+});
+
 test('gowin_summary: picks the newest build and says which others exist', async () => {
   const r = await server.call('gowin_summary', { path: DEMO });
   assert.match(r.text, /^Build: demo/);
@@ -87,7 +117,7 @@ test('gowin_timing: recovery/removal summarised, hold table is hold only', async
 
 test('gowin_list_builds: lists the fixtures with device and timing flag', async () => {
   const r = await server.call('gowin_list_builds', { root: FIXTURES });
-  assert.equal(r.structured.builds.length, 4);
+  assert.equal(r.structured.builds.length, 5);
   assert.ok(r.structured.builds.every((b) => b.device === 'GW2AR-18'));
   assert.match(r.text, /legacy\s+.*\[no timing\]/);
 });

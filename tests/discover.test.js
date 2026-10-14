@@ -11,7 +11,7 @@ test('discoverBuilds finds every build under the fixtures tree, newest first', (
   const builds = discoverBuilds(FIXTURES);
   assert.deepEqual(
     builds.map((b) => b.name).sort(),
-    ['demo', 'fail', 'legacy', 'stale'],
+    ['demo', 'fail', 'legacy', 'stale', 'xdomain'],
   );
   for (let i = 1; i < builds.length; i++) {
     assert.ok(builds[i - 1].mtime >= builds[i].mtime, 'sorted by mtime descending');

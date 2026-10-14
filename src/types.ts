@@ -104,11 +104,30 @@ export interface TimingReport {
 
 export interface Violation {
   kind: 'setup' | 'hold' | 'fmax';
+  /** The clock, or "from -> to" for a path between two clock domains. */
   clock: string;
   /** Slack in ns for setup/hold; MHz shortfall for fmax. */
   amount: number;
   unit: 'ns' | 'MHz';
   detail: string;
+  /**
+   * tns:   a negative row of the Total Negative Slack summary.
+   * paths: negative slack in the setup/hold path tables that no negative TNS
+   *        row accounts for. Gowin leaves paths between clock domains out of
+   *        the TNS, so the summary looks clean while the path tables do not.
+   * fmax:  the Max Frequency summary.
+   */
+  source: 'tns' | 'paths' | 'fmax';
+  /** Launch and capture clocks (source = paths). */
+  fromClock?: string;
+  toClock?: string;
+  /** True when fromClock differs from toClock (source = paths). */
+  crossDomain?: boolean;
+  /**
+   * Negative paths seen for this clock pair. A lower bound: the path tables
+   * are capped by -max_paths at report time.
+   */
+  pathCount?: number;
 }
 
 /**
@@ -146,6 +165,12 @@ export interface CheckThresholds {
   minFmaxMarginMhz?: number;
   /** Default true: an unknown timing status fails the gate. */
   failOnMissingTiming?: boolean;
+  /**
+   * Default false. When true, negative paths between two clock domains that
+   * the TNS summary does not count are reported but do not fail the gate —
+   * for designs where those crossings are declared false paths in the .sdc.
+   */
+  ignoreCrossDomain?: boolean;
 }
 
 export interface ThresholdFailure {
@@ -163,9 +188,13 @@ export interface CheckResult {
   reasons: string[];
   violations: Violation[];
   timing: { status: CheckStatus; reason: string };
-  thresholds: Required<Pick<CheckThresholds, 'failOnMissingTiming'>> &
+  thresholds: Required<Pick<CheckThresholds, 'failOnMissingTiming' | 'ignoreCrossDomain'>> &
     Pick<CheckThresholds, 'maxUtilization' | 'minFmaxMarginMhz'>;
   thresholdFailures: ThresholdFailure[];
+  /** Cross-domain path violations left out of the decision by ignoreCrossDomain. */
+  ignoredViolations: Violation[];
+  /** Context the reader needs to interpret the decision, e.g. why the TNS looks clean. */
+  notes: string[];
 }
 
 /** One row of "Global Clock Signals": how a clock net was routed. */

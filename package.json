@@ -1,6 +1,6 @@
 {
   "name": "gowin-mcp",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "MCP server that turns Gowin EDA build reports into structured data: resource usage, fMax per clock, timing violations with a pass/fail/unknown gate, pin assignment, synthesis/PnR warnings, and build-to-build comparison.",
   "type": "module",
   "bin": {

@@ -205,7 +205,7 @@ export function createServer(): McpServer {
     {
       title: 'Build gate',
       description:
-        'Pass/fail/unknown gate for CI. Lists timing violations with the offending path for each, plus optional thresholds on utilization and fMax margin. "unknown" means timing could not be verified (no _tr_content.html, unrecognised report, or no clocks analysed) and is never a pass.',
+        'Pass/fail/unknown gate for CI. Lists timing violations with the offending path for each, plus optional thresholds on utilization and fMax margin. Negative paths between clock domains count as violations even though Gowin leaves them out of the TNS summary (set ignoreCrossDomain when they are declared false paths). "unknown" means timing could not be verified (no _tr_content.html, unrecognised report, or no clocks analysed) and is never a pass.',
       inputSchema: {
         path: S.PathArg,
         name: S.NameArg,
@@ -224,21 +224,30 @@ export function createServer(): McpServer {
           .boolean()
           .optional()
           .describe('Default true: an unknown timing status fails the gate. Set false to accept on resources alone.'),
+        ignoreCrossDomain: z
+          .boolean()
+          .optional()
+          .describe(
+            'Default false. Set true when the paths between clock domains are declared false paths (set_false_path / set_clock_groups in the .sdc): their negative slack is then listed but does not fail the gate.',
+          ),
       },
       outputSchema: S.CheckResult.shape,
       annotations: READ_ONLY,
     },
-    guarded(({ path, name, format, maxUtilization, minFmaxMarginMhz, failOnMissingTiming }) => {
+    guarded(({ path, name, format, maxUtilization, minFmaxMarginMhz, failOnMissingTiming, ignoreCrossDomain }) => {
       const b = must(path, name);
-      const r = checkBuild(b, { maxUtilization, minFmaxMarginMhz, failOnMissingTiming });
+      const r = checkBuild(b, { maxUtilization, minFmaxMarginMhz, failOnMissingTiming, ignoreCrossDomain });
       const head = `${r.status.toUpperCase()} — ${r.reasons[0]}`;
       const lines = [head];
       if (r.status === 'unknown' && r.ok) lines.push('ok=true (gate accepted the build on resources)');
       if (r.status === 'fail') {
-        if (r.violations.length) lines.push(renderViolations(b));
+        if (r.violations.length) lines.push(renderViolations(b, r.violations));
         for (const t of r.thresholdFailures) lines.push(`  threshold ${t.kind.padEnd(11)} ${t.detail}`);
-        if (r.timing.status === 'unknown') lines.push(`  note: ${r.reasons[r.reasons.length - 1]}`);
       }
+      for (const v of r.ignoredViolations) {
+        lines.push(`  ignored ${v.kind} ${v.clock} ${v.amount} ns (at least ${v.pathCount} path${v.pathCount === 1 ? '' : 's'})`);
+      }
+      for (const n of r.notes) lines.push(`  note: ${n}`);
       if (b.found.siblings?.length) lines.push(buildHeader(b).find((l) => l.startsWith('Note:')) ?? '');
       return result(r, lines.filter(Boolean).join('\n'), format);
     }),

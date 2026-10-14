@@ -1,7 +1,15 @@
 import { explainViolation, formatFmax, formatResource, timingVerdict } from './analyze.js';
 import type { LoadedBuild } from './analyze.js';
 import type { BuildDiff } from './compare.js';
-import type { PackagePin, PinReport, PortPin, TimingPath, WarningGroup, WarningsReport } from './types.js';
+import type {
+  PackagePin,
+  PinReport,
+  PortPin,
+  TimingPath,
+  Violation,
+  WarningGroup,
+  WarningsReport,
+} from './types.js';
 
 /** Compact text renderings shared by the tools. JSON output bypasses these. */
 
@@ -59,9 +67,10 @@ export function renderResources(b: LoadedBuild, includeBanks: boolean): string {
   return out.join('\n');
 }
 
-export function renderViolations(b: LoadedBuild): string {
+/** `violations` overrides the verdict's list, e.g. after gowin_check ignored some. */
+export function renderViolations(b: LoadedBuild, violations?: Violation[]): string {
   const verdict = timingVerdict(b.timing);
-  const v = verdict.violations;
+  const v = violations ?? verdict.violations;
   if (verdict.status === 'unknown') return `\nTiming: UNKNOWN — ${verdict.reason}`;
   if (!v.length) return '\nTiming: CLEAN — no violations';
 
@@ -70,6 +79,12 @@ export function renderViolations(b: LoadedBuild): string {
     const amt = x.unit === 'ns' ? `${x.amount} ns` : `${x.amount} MHz`;
     out.push(
       `  ${x.kind.padEnd(5)} ${x.clock.padEnd(14)} ${amt.padStart(12)}  ${explainViolation(x, b.timing)}`,
+    );
+  }
+  const uncounted = v.filter((x) => x.source === 'paths').length;
+  if (uncounted) {
+    out.push(
+      `  (${uncounted} of these ${uncounted === 1 ? 'is' : 'are'} not counted in Gowin's TNS summary: negative slack on paths between clock domains)`,
     );
   }
   return out.join('\n');

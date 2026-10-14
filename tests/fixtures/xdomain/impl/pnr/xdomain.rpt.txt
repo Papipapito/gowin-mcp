@@ -1,0 +1,162 @@
+//Copyright (C)2014-2026 Gowin Semiconductor Corporation.
+//All rights reserved.
+
+
+1. PnR Messages
+
+  <Report Title>: PnR Report
+  <Design File>: C:\work\xdomain\impl\gwsynthesis\xdomain.vg
+  <Physical Constraints File>: C:\work\xdomain\constraints\xdomain.cst
+  <Timing Constraints File>: C:\work\xdomain\constraints\xdomain.sdc
+  <Tool Version>: V1.9.12.03 (64-bit)
+  <Part Number>: GW2AR-LV18QN88C8/I7
+  <Device>: GW2AR-18
+  <Device Version>: C
+  <Created Time>:Wed Oct 14 19:23:00 2026
+
+
+2. PnR Details
+
+  Running placement:
+    Placement Phase 0: CPU time = 0h 0m 11s, Elapsed time = 0h 0m 11s
+    Placement Phase 1: CPU time = 0h 0m 1s, Elapsed time = 0h 0m 1s
+    Placement Phase 2: CPU time = 0h 0m 25s, Elapsed time = 0h 0m 25s
+    Placement Phase 3: CPU time = 0h 0m 40s, Elapsed time = 0h 0m 40s
+    Total Placement: CPU time = 0h 1m 17s, Elapsed time = 0h 1m 17s
+ Running routing:
+    Routing Phase 0: CPU time = 0h 0m 0.012s, Elapsed time = 0h 0m 0.012s
+    Routing Phase 1: CPU time = 0h 0m 12s, Elapsed time = 0h 0m 12s
+    Routing Phase 2: CPU time = 0h 0m 41s, Elapsed time = 0h 0m 41s
+    Routing Phase 3: CPU time = 0h 0m 0s, Elapsed time = 0h 0m 0s
+    Total Routing: CPU time = 0h 0m 53s, Elapsed time = 0h 0m 53s
+ Generate output files:
+    CPU time = 0h 0m 6s, Elapsed time = 0h 0m 6s
+
+ Total Time and Memory Usage: CPU time = 0h 2m 16s, Elapsed time = 0h 2m 16s, Peak memory usage = 537MB
+
+
+3. Resource Usage Summary
+
+  --------------------------------------------------------------------------------
+  Resources                   | Usage                               | Utilization
+  --------------------------------------------------------------------------------
+  Logic                       | 11469/20736                         |  56%
+    --LUT,ALU,ROM16           | 10659(9243 LUT, 1416 ALU, 0 ROM16)  | -
+    --SSRAM(RAM16)            | 135                                 | -
+  Register                    | 5924/15915                          |  38%
+    --Logic Register as Latch | 0/15552                             |  0%
+    --Logic Register as FF    | 5854/15552                          |  38%
+    --I/O Register as Latch   | 0/363                               |  0%
+    --I/O Register as FF      | 70/363                              |  20%
+  CLS                         | 7915/10368                          |  77%
+  I/O Port                    | 47/66                               |  72%
+  I/O Buf                     | 43                                  | -
+    --Input Buf               | 14                                  | -
+    --Output Buf              | 21                                  | -
+    --Inout Buf               | 8                                   | -
+  IOLOGIC                     | 6/121                               | 5%
+    --OSER10                  | 3
+  BSRAM                       | 16/46                               | 35%
+    --SPX9                    | 1
+    --SDPB                    | 8
+    --SDPX9B                  | 4
+    --pROM                    | 3
+  DSP                         | 1.5/24                              | 7%
+    --MULT18X18               | 3
+  ================================================================================
+
+
+
+4. I/O Bank Usage Summary
+
+  --------------------------------------
+  I/O Bank  | Usage       | Utilization 
+  --------------------------------------
+  bank 0   | 2/8         | 25%         
+  bank 1   | 8/9         | 89%         
+  bank 2   | 0/4         | 0%          
+  bank 3   | 13/17       | 77%         
+  bank 4   | 8/8         | 100%        
+  bank 5   | 9/10        | 90%         
+  bank 6   | 6/9         | 67%         
+  bank 7   | 1/1         | 100%        
+  ======================================
+
+
+5. Clock Resource Usage Summary
+
+  ------------------------------------------
+  Clock Resource| Usage         | Utilization 
+  ------------------------------------------
+  PRIMARY       | 8/8           | 100%
+  LW            | 8/8           | 100%
+  GCLK_PIN      | 3/5           | 60%
+  CLKDIV        | 4/8           | 50%
+  rPLL          | 2/2           | 100%
+  ==========================================
+
+
+6. Global Clock Signals
+
+  -------------------------------------------
+  Signal         | Global Clock   | Location
+  -------------------------------------------
+  CLK_27M_d      | PRIMARY        |  TR TL BR BL
+  DAC_BCLK_d     | PRIMARY        |  BR
+  O_sdram_clk_d  | PRIMARY        |  TR
+  clk_54m        | PRIMARY        |  TR TL BR BL
+  clk_eng        | PRIMARY        |  TR TL BR BL
+  u_top/clk_27m   | PRIMARY        |  TL BR BL
+  u_top/clk_5m4   | PRIMARY        |  TL
+  u_top/clk_108m  | PRIMARY        |  TR TL BR BL
+  ===========================================
+
+
+7. Pinout by Port Name
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Port Name         | Diff Pair | Loc./Bank     | Constraint | Dir.  | Site     | CFG             | IO Type    | Drive | Pull Mode | PCI Clamp | Hysteresis | Open Drain | Vref       | Single Resistor | Diff Resistor | BankVccio 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CLK_27M           | -         | 4/7           | Y          | in    | IOL7[A]  | LPLL1_T_in      | LVCMOS33   | NA    | NONE      | ON        | NONE       | NA         | NA         | OFF             | NA            | 3.3       
+CART_SLTSL_n      | -         | 18/6          | Y          | in    | IOL49[B] | -               | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | OFF             | NA            | 3.3       
+CART_RD_n         | -         | 15/6          | Y          | in    | IOL47[A] | LPLL2_T_fb      | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | OFF             | NA            | 3.3       
+CART_WR_n         | -         | 16/6          | Y          | in    | IOL47[B] | LPLL2_C_fb      | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | OFF             | NA            | 3.3       
+CART_CLOCK        | -         | 76/1          | Y          | in    | IOT30[B] | GCLKC_1         | LVCMOS33   | NA    | NONE      | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3       
+CART_MUX_SIG[0]   | -         | 77/1          | Y          | in    | IOT30[A] | GCLKT_1         | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3       
+CART_MUX_SIG[1]   | -         | 27/5          | Y          | in    | IOB8[A]  | -               | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3       
+CART_MUX_SIG[2]   | -         | 28/5          | Y          | in    | IOB8[B]  | -               | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3       
+CART_MUX_SIG[3]   | -         | 25/5          | Y          | in    | IOB6[A]  | -               | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3       
+CART_MUX_SIG[4]   | -         | 26/5          | Y          | in    | IOB6[B]  | -               | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3       
+CART_MUX_SIG[5]   | -         | 29/5          | Y          | in    | IOB14[A] | -               | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3       
+CART_MUX_SIG[6]   | -         | 30/5          | Y          | in    | IOB14[B] | -               | LVCMOS33   | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3       
+=========================================================================================================================================================================================================================
+
+
+
+
+8. All Package Pins
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Loc./Bank| Signal            | Dir.  | Site     | CFG             | IO Type  | Drive | Pull Mode | PCI Clamp | Hysteresis | Open Drain | Vref       | Single Resistor | Diff Resistor | Bank Vccio
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+86/0     | CART_DATA_SIG[2]  | io    | IOT4[A]  | -               | LVCMOS33 | 8     | UP        | NA        | NONE       | OFF        | NA         | NA              | NA            | 3.3  
+85/0     | -                 | in    | IOT4[B]  | -               | LVCMOS33 | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3  
+84/0     | -                 | in    | IOT6[A]  | -               | LVCMOS33 | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3  
+83/0     | -                 | in    | IOT6[B]  | -               | LVCMOS33 | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3  
+82/0     | -                 | in    | IOT17[A] | -               | LVCMOS33 | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3  
+81/0     | -                 | in    | IOT17[B] | -               | LVCMOS33 | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3  
+80/0     | -                 | in    | IOT27[A] | GCLKT_0         | LVCMOS33 | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3  
+79/0     | CART_DATA_SIG[3]  | io    | IOT27[B] | GCLKC_0         | LVCMOS33 | 8     | UP        | NA        | NONE       | OFF        | NA         | NA              | NA            | 3.3  
+77/1     | CART_MUX_SIG[0]   | in    | IOT30[A] | GCLKT_1         | LVCMOS33 | NA    | UP        | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3  
+76/1     | CART_CLOCK        | in    | IOT30[B] | GCLKC_1         | LVCMOS33 | NA    | NONE      | ON        | NONE       | NA         | NA         | NA              | NA            | 3.3  
+75/1     | LED               | out   | IOT34[A] | -               | LVCMOS33 | 8     | UP        | NA        | NA         | OFF        | NA         | NA              | NA            | 3.3  
+74/1     | CART_BUSDIR_n     | out   | IOT34[B] | -               | LVCMOS33 | 8     | UP        | NA        | NA         | OFF        | NA         | NA              | NA            | 3.3  
+73/1     | CART_INT_n        | out   | IOT40[A] | -               | LVCMOS33 | 8     | DOWN      | NA        | NA         | OFF        | NA         | NA              | NA            | 3.3  
+72/1     | CART_DATA_SIG[4]  | io    | IOT40[B] | -               | LVCMOS33 | 8     | UP        | NA        | NONE       | OFF        | NA         | NA              | NA            | 3.3  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+==============================================================================================================================================================================================
+
+

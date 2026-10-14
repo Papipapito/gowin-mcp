@@ -95,7 +95,9 @@ For CI, `gowin_check` also takes:
 - `maxUtilization` — fail when CLS, Logic or BSRAM utilization exceeds this percentage;
 - `minFmaxMarginMhz` — fail when any clock achieves less than constraint + this margin;
 - `failOnMissingTiming` — default `true`; set `false` to accept an `unknown` build on
-  resources alone.
+  resources alone;
+- `ignoreCrossDomain` — default `false`; set `true` when the paths between clock domains
+  are declared false paths in the `.sdc` (see [TNS versus paths](#tns-versus-paths)).
 
 The result's `ok` field is the decision to act on (`status` says what is known,
 `ok` says whether to accept the build); `reasons` lists why.
@@ -199,8 +201,8 @@ Known gaps:
   (yosys / nextpnr-himbaechel / apicula) is a different format and is not parsed.
 - Only English-language reports.
 - Power reports (`*.power.html`) are written by the tool but not read yet.
-- The unit tests run on trimmed fixtures from two of those builds (V1.9.12.03 and
-  V1.9.9); the full matrix above was exercised manually.
+- The unit tests run on trimmed fixtures from three of those builds (V1.9.12.03,
+  V1.9.11.03 and V1.9.9); the full matrix above was exercised manually.
 
 Failures should be visible rather than silent: fields that do not parse come back
 absent, timing that cannot be verified comes back `unknown`. If you get a missing or
@@ -209,9 +211,39 @@ implausible number, please open an issue with the offending `.rpt.txt` or
 
 ## Notes
 
-- Setup and hold violations are taken from the Total Negative Slack summary rather
-  than the path tables, because the path tables are capped by `-max_paths` at report
-  time and would under-report a design with many failures.
+### TNS versus paths
+
+Gowin's Total Negative Slack summary is per clock, and it leaves out paths whose
+launch and capture clocks differ. A design can therefore show every TNS row at
+`0.000` and every fMax above its constraint while the setup table opens with a
+`-2.09 ns` path from `clock_54m` to `clock_27m`. The GUI's summary page says clean;
+the design is not.
+
+Violations are collected from both places:
+
+- **TNS summary** (`source: "tns"`): complete for what it counts, since the path
+  tables are capped by `-max_paths` at report time and would under-report a design
+  with many failures.
+- **Path tables** (`source: "paths"`): every setup or hold path with negative slack
+  whose clock pair no negative TNS row of the same kind accounts for. One violation
+  per `(from clock, to clock)` pair, with `clock` rendered as `from -> to`,
+  `amount` the worst slack, and `pathCount` the number of such paths — a lower
+  bound, because of the cap. `crossDomain` is `true` when the clocks differ.
+
+Cross-domain violations fail `gowin_check` by default. Whether they are real depends
+on the constraints: a crossing that goes through a synchroniser or an asynchronous
+FIFO should be declared with `set_false_path` or `set_clock_groups -asynchronous` in
+the `.sdc`, after which the timing engine stops reporting it. If the `.sdc` already
+declares them and the paths still show, or the crossing is known to be safe, pass
+`ignoreCrossDomain: true`: the violations are then listed under `ignoredViolations`
+with a note, and do not affect `status`. A violation the TNS does count is never
+ignored.
+
+Of 159 local builds checked when this was added, 45 had negative paths the TNS left
+out; 30 of them had been reported as clean before.
+
+### Other
+
 - An fMax failure is only reported separately when no setup violation already covers
   that clock — otherwise it is the same defect counted twice.
 - Recovery and removal paths (asynchronous set/reset checks) are parsed into their own
@@ -221,7 +253,7 @@ implausible number, please open an issue with the offending `.rpt.txt` or
 
 ```bash
 npm run build      # tsc -> dist/
-npm test           # node:test over tests/fixtures (33 tests)
+npm test           # node:test over tests/fixtures (38 tests)
 node tests/stdio.mjs <path-to-a-real-build>   # drive the server over stdio
 ```
 

@@ -7,6 +7,8 @@ export const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), 'fixtures'
 export const DEMO = join(FIXTURES, 'demo');
 export const FAILING = join(FIXTURES, 'failing');
 export const LEGACY = join(FIXTURES, 'legacy');
+/** Every TNS row at 0.000, yet negative setup/hold paths between clock domains. */
+export const XDOMAIN = join(FIXTURES, 'xdomain');
 export const DIST = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 
 /**

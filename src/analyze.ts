@@ -10,8 +10,10 @@ import type {
   ResourceReport,
   ResourceRow,
   ThresholdFailure,
+  TimingPath,
   TimingReport,
   TimingVerdict,
+  TnsRow,
   Violation,
 } from './types.js';
 
@@ -30,41 +32,132 @@ export function loadBuild(found: FoundBuild): LoadedBuild {
   };
 }
 
-/**
- * Collects every timing failure into one list.
- *
- * Setup and hold come from the TNS summary rather than the path tables: the
- * path tables are capped by `-max_paths` at report time, so a design with more
- * violations than the cap would under-report. TNS is always complete.
- */
-export function findViolations(timing: TimingReport | undefined): Violation[] {
-  if (!timing) return [];
-  const out: Violation[] = [];
+export interface ViolationOptions {
+  /** Leave out cross-domain path violations (see CheckThresholds.ignoreCrossDomain). */
+  ignoreCrossDomain?: boolean;
+}
 
+type SlackKind = 'setup' | 'hold';
+
+function tnsKind(row: TnsRow): SlackKind {
+  return row.analysis.toLowerCase() === 'hold' ? 'hold' : 'setup';
+}
+
+/** Setup and hold violations as the TNS summary states them. */
+function tnsViolations(timing: TimingReport): Violation[] {
+  const out: Violation[] = [];
   for (const row of timing.tns) {
     if (row.tns >= 0) continue;
-    const kind = row.analysis.toLowerCase() === 'hold' ? 'hold' : 'setup';
+    const kind = tnsKind(row);
     out.push({
       kind,
+      source: 'tns',
       clock: row.clock,
       amount: row.tns,
       unit: 'ns',
       detail: `${row.endpoints} endpoint${row.endpoints === 1 ? '' : 's'} failing ${kind}`,
     });
   }
+  return out;
+}
+
+/**
+ * Negative slack in the path tables that the TNS summary does not account
+ * for, one violation per (from clock, to clock) pair.
+ *
+ * Gowin's TNS is per clock and leaves out paths whose launch and capture
+ * clocks differ: a design can show every TNS row at 0.000 while the setup
+ * table opens with a -2 ns clock_54m -> clock_27m path. A pair is only
+ * reported here when neither of its clocks already has a negative TNS row of
+ * the same kind, so a defect the TNS does count is not listed twice.
+ *
+ * The path tables are capped by `-max_paths`, so the count is a lower bound.
+ */
+function pathViolations(timing: TimingReport): Violation[] {
+  const out: Violation[] = [];
+  const pools: [SlackKind, TimingPath[]][] = [
+    ['setup', timing.setupPaths],
+    ['hold', timing.holdPaths],
+  ];
+  for (const [kind, pool] of pools) {
+    const counted = new Set(
+      timing.tns.filter((r) => r.tns < 0 && tnsKind(r) === kind).map((r) => r.clock),
+    );
+    const byPair = new Map<string, TimingPath[]>();
+    for (const p of pool) {
+      if (p.slack >= 0) continue;
+      if (counted.has(p.fromClock) || counted.has(p.toClock)) continue;
+      const key = `${p.fromClock}\u0000${p.toClock}`;
+      const list = byPair.get(key);
+      if (list) list.push(p);
+      else byPair.set(key, [p]);
+    }
+    for (const paths of byPair.values()) {
+      paths.sort((a, b) => a.slack - b.slack);
+      const worst = paths[0];
+      const crossDomain = worst.fromClock !== worst.toClock;
+      const n = paths.length;
+      const pair = `${worst.fromClock} -> ${worst.toClock}`;
+      out.push({
+        kind,
+        source: 'paths',
+        clock: crossDomain ? pair : worst.fromClock,
+        fromClock: worst.fromClock,
+        toClock: worst.toClock,
+        crossDomain,
+        pathCount: n,
+        amount: worst.slack,
+        unit: 'ns',
+        detail:
+          `at least ${n} ${kind} path${n === 1 ? '' : 's'} ${pair} failing, not counted in the TNS` +
+          `${crossDomain ? ' (clock domain crossing)' : ''}; worst ${worst.slack} ns: ${worst.from} -> ${worst.to}`,
+      });
+    }
+  }
+  return out;
+}
+
+/** The cross-domain path violations `ignoreCrossDomain` leaves out of the decision. */
+export function crossDomainViolations(timing: TimingReport | undefined): Violation[] {
+  if (!timing) return [];
+  return pathViolations(timing).filter((v) => v.crossDomain);
+}
+
+/**
+ * Collects every timing failure into one list.
+ *
+ * Setup and hold come first from the TNS summary, which is complete for what
+ * it counts (the path tables are capped by `-max_paths`), then from the path
+ * tables for the negative slack the TNS leaves out: paths between clock
+ * domains. See pathViolations.
+ */
+export function findViolations(
+  timing: TimingReport | undefined,
+  opts: ViolationOptions = {},
+): Violation[] {
+  if (!timing) return [];
+  const out = [
+    ...tnsViolations(timing),
+    ...pathViolations(timing).filter((v) => !(opts.ignoreCrossDomain && v.crossDomain)),
+  ];
 
   // A clock that misses its constraint almost always shows up as a setup
   // violation too. Reporting both is the same defect counted twice, so fMax is
   // only raised when nothing in the TNS summary already covers that clock —
   // which is itself worth surfacing, since it means the constraint is missing
   // or the path was excluded from analysis.
-  const clocksWithSlackViolation = new Set(
-    out.filter((v) => v.kind === 'setup').map((v) => v.clock),
-  );
+  const clocksWithSlackViolation = new Set<string>();
+  for (const v of out) {
+    if (v.kind !== 'setup') continue;
+    clocksWithSlackViolation.add(v.clock);
+    if (v.fromClock) clocksWithSlackViolation.add(v.fromClock);
+    if (v.toClock) clocksWithSlackViolation.add(v.toClock);
+  }
   for (const f of timing.fmax) {
     if (!f.failing || clocksWithSlackViolation.has(f.clock)) continue;
     out.push({
       kind: 'fmax',
+      source: 'fmax',
       clock: f.clock,
       amount: f.marginMhz,
       unit: 'MHz',
@@ -85,7 +178,10 @@ export function findViolations(timing: TimingReport | undefined): Violation[] {
  * recognise, or a report with no clocks in it at all (nothing constrained)
  * are all `unknown`: never treat them as a pass.
  */
-export function timingVerdict(timing: TimingReport | undefined): TimingVerdict {
+export function timingVerdict(
+  timing: TimingReport | undefined,
+  opts: ViolationOptions = {},
+): TimingVerdict {
   if (!timing) {
     return {
       status: 'unknown',
@@ -107,7 +203,7 @@ export function timingVerdict(timing: TimingReport | undefined): TimingVerdict {
       violations: [],
     };
   }
-  const violations = findViolations(timing);
+  const violations = findViolations(timing, opts);
   if (violations.length) {
     return {
       status: 'fail',
@@ -123,7 +219,8 @@ export function explainViolation(
   v: Violation,
   timing: TimingReport | undefined,
 ): string {
-  if (!timing || v.kind === 'fmax') return v.detail;
+  // Path violations already name their worst path.
+  if (!timing || v.source !== 'tns') return v.detail;
   const pool = v.kind === 'hold' ? timing.holdPaths : timing.setupPaths;
   const worst = pool
     .filter((p) => p.fromClock === v.clock || p.toClock === v.clock)
@@ -167,11 +264,36 @@ export function utilizationPct(row: ResourceRow | undefined): number | undefined
  */
 export function checkBuild(loaded: LoadedBuild, thresholds: CheckThresholds = {}): CheckResult {
   const failOnMissingTiming = thresholds.failOnMissingTiming ?? true;
-  const verdict = timingVerdict(loaded.timing);
+  const ignoreCrossDomain = thresholds.ignoreCrossDomain ?? false;
+  const verdict = timingVerdict(loaded.timing, { ignoreCrossDomain });
   const reasons: string[] = [];
+  const notes: string[] = [];
   const thresholdFailures: ThresholdFailure[] = [];
+  const ignoredViolations = ignoreCrossDomain ? crossDomainViolations(loaded.timing) : [];
 
   if (verdict.status === 'fail') reasons.push(verdict.reason);
+
+  // Negative slack the TNS summary does not count. Whoever reads a clean
+  // fMax/TNS table next to a FAIL needs to know where the failure came from,
+  // and that the fix may be a constraint rather than the RTL.
+  const uncounted = verdict.violations.filter((v) => v.source === 'paths');
+  if (uncounted.length) {
+    const n = uncounted.length;
+    notes.push(
+      `${n} violation${n === 1 ? '' : 's'} come${n === 1 ? 's' : ''} from the path tables, not the TNS summary. ` +
+        "Gowin's TNS does not count paths between clock domains, so the fMax/TNS summary looks clean while these paths fail. " +
+        'Check whether the .sdc declares these crossings as false paths (set_false_path / set_clock_groups); if it does, pass ignoreCrossDomain=true. ' +
+        'Path counts are lower bounds: the tables are capped by -max_paths.',
+    );
+  }
+  if (ignoredViolations.length) {
+    const n = ignoredViolations.length;
+    const pairs = ignoredViolations.map((v) => `${v.kind} ${v.clock} (${v.amount} ns)`).join(', ');
+    notes.push(
+      `${n} cross-domain path violation${n === 1 ? '' : 's'} ignored (ignoreCrossDomain=true): ${pairs}. ` +
+        'Only safe when the .sdc declares these crossings as false paths or asynchronous clock groups.',
+    );
+  }
 
   if (thresholds.maxUtilization != null) {
     const h = loaded.resources.headline;
@@ -228,6 +350,8 @@ export function checkBuild(loaded: LoadedBuild, thresholds: CheckThresholds = {}
     reasons.push(verdict.reason);
   }
 
+  reasons.push(...notes);
+
   return {
     status,
     ok: status === 'pass' || (status === 'unknown' && !failOnMissingTiming),
@@ -238,8 +362,11 @@ export function checkBuild(loaded: LoadedBuild, thresholds: CheckThresholds = {}
       maxUtilization: thresholds.maxUtilization,
       minFmaxMarginMhz: thresholds.minFmaxMarginMhz,
       failOnMissingTiming,
+      ignoreCrossDomain,
     },
     thresholdFailures,
+    ignoredViolations,
+    notes,
   };
 }
 

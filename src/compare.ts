@@ -53,8 +53,15 @@ function indexRows(rows: ResourceRow[]): Map<string, ResourceRow> {
   return m;
 }
 
+/**
+ * Identity of a violation across builds. A path violation is keyed by its
+ * clock pair, so a clock_54m -> clock_27m crossing is tracked apart from a
+ * TNS violation on either clock; a same-domain path violation shares the key
+ * of the TNS row for that clock, since it is the same defect counted differently.
+ */
 function violationKey(v: Violation): string {
-  return `${v.kind}:${v.clock}`;
+  if (v.source === 'paths' && v.crossDomain) return `${v.kind}:${v.fromClock}->${v.toClock}`;
+  return `${v.kind}:${v.source === 'paths' ? v.fromClock ?? v.clock : v.clock}`;
 }
 
 export function compareBuilds(before: LoadedBuild, after: LoadedBuild): BuildDiff {

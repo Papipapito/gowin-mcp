@@ -1,0 +1,1044 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<title>Timing Analysis Report</title>
+<style type="text/css">
+@import url(../temp/style.css);
+body { font-family: Verdana, Arial, sans-serif; font-size: 12px; }
+div#content { width: 100%; margin: }
+hr { margin-top: 30px; margin-bottom: 30px; }
+h1, h3 { text-align: center; }
+h1 {margin-top: 50px; }
+table, th, td {white-space:pre; border: 1px solid #aaa; }
+table { border-collapse:collapse; margin-top: 10px; margin-bottom: 20px; width: 100%; }
+th, td { padding: 5px 5px 5px 5px; }
+th { color: #fff; font-weight: bold; background-color: #0084ff; }
+table.summary_table td.label { width: 24%; min-width: 200px; background-color: #dee8f4; }
+table.detail_table th.label {  min-width: 8%; width: 8%; }
+</style>
+</head>
+<body>
+<div id="content">
+<h1><a name="Message">Timing Messages</a></h1>
+<table class="summary_table">
+<tr>
+<td class="label">Report Title</td>
+<td>Timing Analysis Report</td>
+</tr>
+<tr>
+<td class="label">Design File</td>
+<td>C:\work\xdomain\impl\gwsynthesis\xdomain.vg</td>
+</tr>
+<tr>
+<td class="label">Physical Constraints File</td>
+<td>C:\work\xdomain\constraints\xdomain.cst</td>
+</tr>
+<tr>
+<td class="label">Timing Constraint File</td>
+<td>C:\work\xdomain\constraints\xdomain.sdc</td>
+</tr>
+<tr>
+<td class="label">Tool Version</td>
+<td>V1.9.11.03 Education</td>
+</tr>
+<tr>
+<td class="label">Part Number</td>
+<td>GW2AR-LV18QN88C8/I7</td>
+</tr>
+<tr>
+<td class="label">Device</td>
+<td>GW2AR-18</td>
+</tr>
+<tr>
+<td class="label">Device Version</td>
+<td>C</td>
+</tr>
+<tr>
+<td class="label">Created Time</td>
+<td>Wed Oct 14 19:23:01 2026
+</td>
+</tr>
+<tr>
+<td class="label">Legal Announcement</td>
+<td>Copyright (C)2014-2026 Gowin Semiconductor Corporation. All rights reserved.</td>
+</tr>
+</table>
+<h1><a name="Summary">Timing Summaries</a></h1>
+<h2><a name="STA_Tool_Run_Summary">STA Tool Run Summary:</a></h2>
+<table class="summary_table">
+<tr>
+<td class="label">Setup Delay Model</td>
+<td>Slow 0.95V 85C C8/I7</td>
+</tr>
+<tr>
+<td class="label">Hold Delay Model</td>
+<td>Fast 1.05V 0C C8/I7</td>
+</tr>
+<tr>
+<td class="label">Numbers of Paths Analyzed</td>
+<td>46584</td>
+</tr>
+<tr>
+<td class="label">Numbers of Endpoints Analyzed</td>
+<td>21681</td>
+</tr>
+<tr>
+<td class="label">Numbers of Falling Endpoints</td>
+<td>65</td>
+</tr>
+<tr>
+<td class="label">Numbers of Setup Violated Endpoints</td>
+<td>20</td>
+</tr>
+<tr>
+<td class="label">Numbers of Hold Violated Endpoints</td>
+<td>22</td>
+</tr>
+</table>
+<h2><a name="Clock_Report">Clock Summary:</a></h2>
+<table class="detail_table">
+<tr>
+<th class="label">NO.</th>
+<th class="label">Clock Name</th>
+<th class="label">Type</th>
+<th class="label">Period</th>
+<th class="label">Frequency(MHz)</th>
+<th class="label">Rise</th>
+<th class="label">Fall</th>
+<th class="label">Source</th>
+<th class="label">Master</th>
+<th class="label">Objects</th>
+</tr>
+<tr>
+<td>1</td>
+<td>clock_reset</td>
+<td>Base</td>
+<td>277.778</td>
+<td>3.600
+<td>0.000</td>
+<td>138.889</td>
+<td></td>
+<td></td>
+<td>bus_reset_n </td>
+</tr>
+<tr>
+<td>2</td>
+<td>clock_audio</td>
+<td>Base</td>
+<td>277.778</td>
+<td>3.600
+<td>0.000</td>
+<td>138.889</td>
+<td></td>
+<td></td>
+<td>u_video/clk_audio </td>
+</tr>
+<tr>
+<td>3</td>
+<td>clock_27m</td>
+<td>Base</td>
+<td>37.037</td>
+<td>27.000
+<td>0.000</td>
+<td>18.518</td>
+<td></td>
+<td></td>
+<td>clk_27m </td>
+</tr>
+<tr>
+<td>4</td>
+<td>clock_env_reset</td>
+<td>Base</td>
+<td>277.778</td>
+<td>3.600
+<td>0.000</td>
+<td>138.889</td>
+<td></td>
+<td></td>
+<td>u_psg1/env_reset </td>
+</tr>
+<tr>
+<td>5</td>
+<td>clock_env_reset2</td>
+<td>Base</td>
+<td>277.778</td>
+<td>3.600
+<td>0.000</td>
+<td>138.889</td>
+<td></td>
+<td></td>
+<td>u_psg2/env_reset </td>
+</tr>
+<tr>
+<td>6</td>
+<td>clock_54m</td>
+<td>Generated</td>
+<td>18.518</td>
+<td>54.000
+<td>0.000</td>
+<td>9.259</td>
+<td>clk_27m </td>
+<td>clock_27m</td>
+<td>clk_54m </td>
+</tr>
+<tr>
+<td>7</td>
+<td>clock_108m</td>
+<td>Generated</td>
+<td>9.259</td>
+<td>108.000
+<td>0.000</td>
+<td>4.630</td>
+<td>clk_27m </td>
+<td>clock_27m</td>
+<td>O_sdram_clk O_sdram_clk_d </td>
+</tr>
+<tr>
+<td>8</td>
+<td>clock_108i</td>
+<td>Generated</td>
+<td>9.259</td>
+<td>108.000
+<td>0.000</td>
+<td>4.630</td>
+<td>clk_27m </td>
+<td>clock_27m</td>
+<td>u_pll_main/rpll_inst/CLKOUT </td>
+</tr>
+<tr>
+<td>9</td>
+<td>clock_VideoDHClk</td>
+<td>Generated</td>
+<td>74.074</td>
+<td>13.500
+<td>0.000</td>
+<td>37.037</td>
+<td>clk_27m </td>
+<td>clock_27m</td>
+<td>VideoDHClk </td>
+</tr>
+<tr>
+<td>10</td>
+<td>clock_VideoDLClk</td>
+<td>Generated</td>
+<td>148.148</td>
+<td>6.750
+<td>0.000</td>
+<td>74.074</td>
+<td>clk_27m </td>
+<td>clock_27m</td>
+<td>VideoDLClk </td>
+</tr>
+<tr>
+<td>11</td>
+<td>ex_clk_27m</td>
+<td>Base</td>
+<td>37.037</td>
+<td>27.000
+<td>0.000</td>
+<td>18.519</td>
+<td></td>
+<td></td>
+<td>ex_clk_27m_ibuf/I </td>
+</tr>
+<tr>
+<td>12</td>
+<td>u_mcu/core/n4_24</td>
+<td>Base</td>
+<td>10.000</td>
+<td>100.000
+<td>0.000</td>
+<td>5.000</td>
+<td></td>
+<td></td>
+<td>u_mcu/core/n4_s1/F </td>
+</tr>
+<tr>
+<td>13</td>
+<td>u_pll_main/rpll_inst/CLKOUTP.default_gen_clk</td>
+<td>Generated</td>
+<td>9.259</td>
+<td>108.000
+<td>4.630</td>
+<td>0.000</td>
+<td>ex_clk_27m_ibuf/I</td>
+<td>ex_clk_27m</td>
+<td>u_pll_main/rpll_inst/CLKOUTP </td>
+</tr>
+<tr>
+<td>14</td>
+<td>u_pll_main/rpll_inst/CLKOUTD.default_gen_clk</td>
+<td>Generated</td>
+<td>18.519</td>
+<td>54.000
+<td>0.000</td>
+<td>9.259</td>
+<td>ex_clk_27m_ibuf/I</td>
+<td>ex_clk_27m</td>
+<td>u_pll_main/rpll_inst/CLKOUTD </td>
+</tr>
+<tr>
+<td>15</td>
+<td>u_pll_main/rpll_inst/CLKOUTD3.default_gen_clk</td>
+<td>Generated</td>
+<td>27.778</td>
+<td>36.000
+<td>0.000</td>
+<td>13.889</td>
+<td>ex_clk_27m_ibuf/I</td>
+<td>ex_clk_27m</td>
+<td>u_pll_main/rpll_inst/CLKOUTD3 </td>
+</tr>
+<tr>
+<td>16</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUT.default_gen_clk</td>
+<td>Generated</td>
+<td>7.407</td>
+<td>135.000
+<td>0.000</td>
+<td>3.704</td>
+<td>u_div4/clkdiv_inst/CLKOUT</td>
+<td>clock_27m</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUT </td>
+</tr>
+<tr>
+<td>17</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTP.default_gen_clk</td>
+<td>Generated</td>
+<td>7.407</td>
+<td>135.000
+<td>0.000</td>
+<td>3.704</td>
+<td>u_div4/clkdiv_inst/CLKOUT</td>
+<td>clock_27m</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTP </td>
+</tr>
+<tr>
+<td>18</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTD.default_gen_clk</td>
+<td>Generated</td>
+<td>14.815</td>
+<td>67.500
+<td>0.000</td>
+<td>7.407</td>
+<td>u_div4/clkdiv_inst/CLKOUT</td>
+<td>clock_27m</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTD </td>
+</tr>
+<tr>
+<td>19</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTD3.default_gen_clk</td>
+<td>Generated</td>
+<td>22.222</td>
+<td>45.000
+<td>0.000</td>
+<td>11.111</td>
+<td>u_div4/clkdiv_inst/CLKOUT</td>
+<td>clock_27m</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTD3 </td>
+</tr>
+</table>
+<h2><a name="Max_Frequency_Report">Max Frequency Summary:</a></h2>
+<table>
+<tr>
+<th>NO.</th>
+<th>Clock Name</th>
+<th>Constraint</th>
+<th>Actual Fmax</th>
+<th>Logic Level</th>
+<th>Entity</th>
+</tr>
+<tr>
+<td>1</td>
+<td>clock_audio</td>
+<td>3.600(MHz)</td>
+<td>453.316(MHz)</td>
+<td>3</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>2</td>
+<td>clock_27m</td>
+<td>27.000(MHz)</td>
+<td>77.094(MHz)</td>
+<td>10</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>3</td>
+<td>clock_54m</td>
+<td>54.000(MHz)</td>
+<td>54.367(MHz)</td>
+<td>9</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>4</td>
+<td>clock_108m</td>
+<td>108.000(MHz)</td>
+<td>169.415(MHz)</td>
+<td>4</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>5</td>
+<td>clock_108i</td>
+<td>108.000(MHz)</td>
+<td>169.415(MHz)</td>
+<td>4</td>
+<td>TOP</td>
+</tr>
+<tr>
+<td>6</td>
+<td>u_mcu/core/n4_24</td>
+<td>100.000(MHz)</td>
+<td>272.341(MHz)</td>
+<td>3</td>
+<td>TOP</td>
+</tr>
+</table>
+<h4>No timing paths to get frequency of clock_reset!</h4>
+<h4>No timing paths to get frequency of clock_env_reset!</h4>
+<h4>No timing paths to get frequency of clock_env_reset2!</h4>
+<h4>No timing paths to get frequency of clock_VideoDHClk!</h4>
+<h4>No timing paths to get frequency of clock_VideoDLClk!</h4>
+<h4>No timing paths to get frequency of ex_clk_27m!</h4>
+<h4>No timing paths to get frequency of u_pll_main/rpll_inst/CLKOUTP.default_gen_clk!</h4>
+<h4>No timing paths to get frequency of u_pll_main/rpll_inst/CLKOUTD.default_gen_clk!</h4>
+<h4>No timing paths to get frequency of u_pll_main/rpll_inst/CLKOUTD3.default_gen_clk!</h4>
+<h4>No timing paths to get frequency of u_video/u_pll_hdmi/rpll_inst/CLKOUT.default_gen_clk!</h4>
+<h4>No timing paths to get frequency of u_video/u_pll_hdmi/rpll_inst/CLKOUTP.default_gen_clk!</h4>
+<h4>No timing paths to get frequency of u_video/u_pll_hdmi/rpll_inst/CLKOUTD.default_gen_clk!</h4>
+<h4>No timing paths to get frequency of u_video/u_pll_hdmi/rpll_inst/CLKOUTD3.default_gen_clk!</h4>
+<h2><a name="Total_Negative_Slack_Report">Total Negative Slack Summary:</a></h2>
+<table class="detail_table">
+<tr>
+<th class="label">Clock Name</th>
+<th class="label">Analysis Type</th>
+<th class="label">Endpoints TNS</th>
+<th class="label">Number of Endpoints</th>
+</tr>
+<tr>
+<td>clock_reset</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_reset</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_audio</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_audio</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_27m</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_27m</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_env_reset</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_env_reset</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_env_reset2</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_env_reset2</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_54m</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_54m</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_108m</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_108m</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_108i</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_108i</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_VideoDHClk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_VideoDHClk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_VideoDLClk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>clock_VideoDLClk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>ex_clk_27m</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>ex_clk_27m</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_mcu/core/n4_24</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_mcu/core/n4_24</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_pll_main/rpll_inst/CLKOUTP.default_gen_clk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_pll_main/rpll_inst/CLKOUTP.default_gen_clk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_pll_main/rpll_inst/CLKOUTD.default_gen_clk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_pll_main/rpll_inst/CLKOUTD.default_gen_clk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_pll_main/rpll_inst/CLKOUTD3.default_gen_clk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_pll_main/rpll_inst/CLKOUTD3.default_gen_clk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUT.default_gen_clk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUT.default_gen_clk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTP.default_gen_clk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTP.default_gen_clk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTD.default_gen_clk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTD.default_gen_clk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTD3.default_gen_clk</td>
+<td>Setup</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUTD3.default_gen_clk</td>
+<td>Hold</td>
+<td>0.000</td>
+<td>0</td>
+</tr>
+</table>
+<h1><a name="Detail">Timing Details</a></h1>
+<h2><a name="All_Path_Slack_Table">Path Slacks Table:</a></h2>
+<h3><a name="Setup_Slack_Table">Setup Paths Table</a></h3>
+<h4>Report Command:report_timing -setup -max_paths 400 -max_common_paths 1</h4>
+<table class="detail_table">
+<tr>
+<th class="label">Path Number</th>
+<th class="label">Path Slack</th>
+<th class="label">From Node</th>
+<th class="label">To Node</th>
+<th class="label">From Clock</th>
+<th class="label">To Clock</th>
+<th class="label">Relation</th>
+<th class="label">Clock Skew</th>
+<th class="label">Data Delay</th>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>1</td>
+<td>-2.090</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>u_uart/ff_rx_state_0_s0/CE</td>
+<td>clock_54m:[F]</td>
+<td>clock_27m:[R]</td>
+<td>9.259</td>
+<td>0.003</td>
+<td>11.276</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>2</td>
+<td>-1.370</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>u_uart/ff_rx_state_1_s0/CE</td>
+<td>clock_54m:[F]</td>
+<td>clock_27m:[R]</td>
+<td>9.259</td>
+<td>0.003</td>
+<td>10.556</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>3</td>
+<td>-0.032</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>u_uart/ff_baud_cnt_4_s1/CE</td>
+<td>clock_54m:[F]</td>
+<td>clock_27m:[R]</td>
+<td>9.259</td>
+<td>0.003</td>
+<td>9.218</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>4</td>
+<td>-0.032</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>u_uart/ff_baud_cnt_5_s1/CE</td>
+<td>clock_54m:[F]</td>
+<td>clock_27m:[R]</td>
+<td>9.259</td>
+<td>0.003</td>
+<td>9.218</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>5</td>
+<td>-0.032</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>u_uart/ff_baud_cnt_15_s1/CE</td>
+<td>clock_54m:[F]</td>
+<td>clock_27m:[R]</td>
+<td>9.259</td>
+<td>0.003</td>
+<td>9.218</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>6</td>
+<td>-0.032</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>u_uart/ff_baud_cnt_16_s1/CE</td>
+<td>clock_54m:[F]</td>
+<td>clock_27m:[R]</td>
+<td>9.259</td>
+<td>0.003</td>
+<td>9.218</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>7</td>
+<td>-0.032</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>u_uart/ff_baud_cnt_17_s1/CE</td>
+<td>clock_54m:[F]</td>
+<td>clock_27m:[R]</td>
+<td>9.259</td>
+<td>0.003</td>
+<td>9.218</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>8</td>
+<td>-0.009</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>u_uart/ff_baud_cnt_0_s1/CE</td>
+<td>clock_54m:[F]</td>
+<td>clock_27m:[R]</td>
+<td>9.259</td>
+<td>0.003</td>
+<td>9.195</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>9</td>
+<td>-0.009</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>u_uart/ff_baud_cnt_1_s1/CE</td>
+<td>clock_54m:[F]</td>
+<td>clock_27m:[R]</td>
+<td>9.259</td>
+<td>0.003</td>
+<td>9.195</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>10</td>
+<td>-0.009</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>u_uart/ff_baud_cnt_2_s1/CE</td>
+<td>clock_54m:[F]</td>
+<td>clock_27m:[R]</td>
+<td>9.259</td>
+<td>0.003</td>
+<td>9.195</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>11</td>
+<td>-0.009</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>u_uart/ff_baud_cnt_3_s1/CE</td>
+<td>clock_54m:[F]</td>
+<td>clock_27m:[R]</td>
+<td>9.259</td>
+<td>0.003</td>
+<td>9.195</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>12</td>
+<td>-0.009</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>u_uart/ff_baud_cnt_6_s1/CE</td>
+<td>clock_54m:[F]</td>
+<td>clock_27m:[R]</td>
+<td>9.259</td>
+<td>0.003</td>
+<td>9.195</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>13</td>
+<td>-0.009</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>u_uart/ff_baud_cnt_18_s1/CE</td>
+<td>clock_54m:[F]</td>
+<td>clock_27m:[R]</td>
+<td>9.259</td>
+<td>0.003</td>
+<td>9.195</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>14</td>
+<td>-0.009</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>u_uart/ff_baud_cnt_19_s1/CE</td>
+<td>clock_54m:[F]</td>
+<td>clock_27m:[R]</td>
+<td>9.259</td>
+<td>0.003</td>
+<td>9.195</td>
+</tr>
+<tr>
+<td>15</td>
+<td>0.041</td>
+<td>u_cpu/u0/ff_status_0_s15/DO[8]</td>
+<td>ff_din_7_s0/D</td>
+<td>clock_54m:[R]</td>
+<td>clock_54m:[R]</td>
+<td>18.200</td>
+<td>0.000</td>
+<td>18.124</td>
+</tr>
+<tr>
+<td>16</td>
+<td>0.061</td>
+<td>u_cpu/u0/ff_status_0_s15/DO[8]</td>
+<td>ff_din_3_s0/D</td>
+<td>clock_54m:[R]</td>
+<td>clock_54m:[R]</td>
+<td>18.200</td>
+<td>0.000</td>
+<td>18.104</td>
+</tr>
+<tr>
+<td>17</td>
+<td>0.063</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>u_sdram/ff_addr_8_s0/D</td>
+<td>clock_54m:[F]</td>
+<td>clock_54m:[R]</td>
+<td>9.259</td>
+<td>0.003</td>
+<td>9.159</td>
+</tr>
+<tr>
+<td>18</td>
+<td>0.065</td>
+<td>u_cpu/RD_s0/Q</td>
+<td>u_sdram/ff_addr_15_s0/D</td>
+<td>clock_54m:[F]</td>
+<td>clock_54m:[R]</td>
+<td>9.259</td>
+<td>0.003</td>
+<td>9.156</td>
+</tr>
+</table>
+<h3><a name="Hold_Slack_Table">Hold Paths Table</a></h3>
+<h4>Report Command:report_timing -hold -max_paths 25 -max_common_paths 1</h4>
+<table class="detail_table">
+<tr>
+<th class="label">Path Number</th>
+<th class="label">Path Slack</th>
+<th class="label">From Node</th>
+<th class="label">To Node</th>
+<th class="label">From Clock</th>
+<th class="label">To Clock</th>
+<th class="label">Relation</th>
+<th class="label">Clock Skew</th>
+<th class="label">Data Delay</th>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>1</td>
+<td>-0.694</td>
+<td>u_sdram/n1247_s7/I0</td>
+<td>u_sdram/ff_seq_1_s0/D</td>
+<td>clock_VideoDHClk:[R]</td>
+<td>clock_108m:[R]</td>
+<td>0.000</td>
+<td>-1.511</td>
+<td>0.863</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>2</td>
+<td>-0.694</td>
+<td>u_sdram/n1247_s7/I0</td>
+<td>u_sdram/ff_seq_1_s0/D</td>
+<td>clock_VideoDHClk:[R]</td>
+<td>clock_108i:[R]</td>
+<td>0.000</td>
+<td>-1.511</td>
+<td>0.863</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>3</td>
+<td>-0.628</td>
+<td>u_sdram/n653_s0/I3</td>
+<td>u_sdram/n781_s0/D</td>
+<td>clock_VideoDLClk:[R]</td>
+<td>clock_108m:[R]</td>
+<td>0.000</td>
+<td>-1.511</td>
+<td>0.929</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>4</td>
+<td>-0.628</td>
+<td>u_sdram/n653_s0/I3</td>
+<td>u_sdram/n781_s0/D</td>
+<td>clock_VideoDLClk:[R]</td>
+<td>clock_108i:[R]</td>
+<td>0.000</td>
+<td>-1.511</td>
+<td>0.929</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>5</td>
+<td>-0.533</td>
+<td>u_sdram/n651_s0/I3</td>
+<td>u_sdram/n779_s0/D</td>
+<td>clock_VideoDLClk:[R]</td>
+<td>clock_108m:[R]</td>
+<td>0.000</td>
+<td>-1.511</td>
+<td>1.024</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>6</td>
+<td>-0.533</td>
+<td>u_sdram/n651_s0/I3</td>
+<td>u_sdram/n779_s0/D</td>
+<td>clock_VideoDLClk:[R]</td>
+<td>clock_108i:[R]</td>
+<td>0.000</td>
+<td>-1.511</td>
+<td>1.024</td>
+</tr>
+</table>
+<h3><a name="Recovery_Slack_Table">Recovery Paths Table</a></h3>
+<h4>Report Command:report_timing -recovery -max_paths 25 -max_common_paths 1</h4>
+<table class="detail_table">
+<tr>
+<th class="label">Path Number</th>
+<th class="label">Path Slack</th>
+<th class="label">From Node</th>
+<th class="label">To Node</th>
+<th class="label">From Clock</th>
+<th class="label">To Clock</th>
+<th class="label">Relation</th>
+<th class="label">Clock Skew</th>
+<th class="label">Data Delay</th>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>1</td>
+<td>-0.441</td>
+<td>u_video/reset_w_s2/I0</td>
+<td>u_video/serializer/gwSer2/RESET</td>
+<td>clock_reset:[F]</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUT.default_gen_clk:[R]</td>
+<td>1.852</td>
+<td>-2.206</td>
+<td>4.311</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>2</td>
+<td>-0.441</td>
+<td>u_video/reset_w_s2/I0</td>
+<td>u_video/serializer/gwSer1/RESET</td>
+<td>clock_reset:[F]</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUT.default_gen_clk:[R]</td>
+<td>1.852</td>
+<td>-2.206</td>
+<td>4.311</td>
+</tr>
+<tr style="color: #FF0000;" class = "error">
+<td>3</td>
+<td>-0.434</td>
+<td>u_video/reset_w_s2/I0</td>
+<td>u_video/serializer/gwSer1/RESET</td>
+<td>clock_reset:[F]</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUT.default_gen_clk:[F]</td>
+<td>1.851</td>
+<td>-2.212</td>
+<td>4.311</td>
+</tr>
+</table>
+<h3><a name="Removal_Slack_Table">Removal Paths Table</a></h3>
+<h4>Report Command:report_timing -removal -max_paths 25 -max_common_paths 1</h4>
+<table class="detail_table">
+<tr>
+<th class="label">Path Number</th>
+<th class="label">Path Slack</th>
+<th class="label">From Node</th>
+<th class="label">To Node</th>
+<th class="label">From Clock</th>
+<th class="label">To Clock</th>
+<th class="label">Relation</th>
+<th class="label">Clock Skew</th>
+<th class="label">Data Delay</th>
+</tr>
+<tr>
+<td>1</td>
+<td>0.251</td>
+<td>u_video/reset_w_s2/I0</td>
+<td>u_video/serializer/gwSer0/RESET</td>
+<td>clock_reset:[R]</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUT.default_gen_clk:[F]</td>
+<td>-0.001</td>
+<td>-2.182</td>
+<td>2.618</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0.254</td>
+<td>u_video/reset_w_s2/I0</td>
+<td>u_video/serializer/gwSer0/RESET</td>
+<td>clock_reset:[R]</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUT.default_gen_clk:[R]</td>
+<td>0.000</td>
+<td>-2.176</td>
+<td>2.618</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.256</td>
+<td>u_video/reset_w_s2/I0</td>
+<td>u_video/serializer/gwSer2/RESET</td>
+<td>clock_reset:[R]</td>
+<td>u_video/u_pll_hdmi/rpll_inst/CLKOUT.default_gen_clk:[F]</td>
+<td>-0.001</td>
+<td>-2.182</td>
+<td>2.623</td>
+</tr>
+</table>
+</div>
+</body>
+</html>

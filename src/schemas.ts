@@ -111,10 +111,17 @@ export const TimingReport = z.object({
 
 export const Violation = z.object({
   kind: z.enum(['setup', 'hold', 'fmax']),
-  clock: z.string(),
+  clock: z.string().describe('The clock, or "from -> to" for a path between two clock domains.'),
   amount: z.number(),
   unit: z.enum(['ns', 'MHz']),
   detail: z.string(),
+  source: z
+    .enum(['tns', 'paths', 'fmax'])
+    .describe('paths = negative slack in the path tables that the TNS summary does not count (cross-domain).'),
+  fromClock: z.string().optional(),
+  toClock: z.string().optional(),
+  crossDomain: z.boolean().optional(),
+  pathCount: z.number().optional().describe('Lower bound: the path tables are capped by -max_paths.'),
 });
 
 export const CheckStatus = z
@@ -152,8 +159,11 @@ export const CheckResult = z.object({
     maxUtilization: z.number().optional(),
     minFmaxMarginMhz: z.number().optional(),
     failOnMissingTiming: z.boolean(),
+    ignoreCrossDomain: z.boolean(),
   }),
   thresholdFailures: z.array(ThresholdFailure),
+  ignoredViolations: z.array(Violation),
+  notes: z.array(z.string()),
 });
 
 export const FoundBuild = z.object({
