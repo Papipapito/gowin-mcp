@@ -1,4 +1,4 @@
-import { explainViolation, findViolations, formatFmax, formatResource } from './analyze.js';
+import { explainViolation, formatFmax, formatResource, timingVerdict } from './analyze.js';
 import type { LoadedBuild } from './analyze.js';
 import type { BuildDiff } from './compare.js';
 import type { TimingPath } from './types.js';
@@ -60,8 +60,9 @@ export function renderResources(b: LoadedBuild, includeBanks: boolean): string {
 }
 
 export function renderViolations(b: LoadedBuild): string {
-  const v = findViolations(b.timing);
-  if (!b.timing) return '\nTiming: no report';
+  const verdict = timingVerdict(b.timing);
+  const v = verdict.violations;
+  if (verdict.status === 'unknown') return `\nTiming: UNKNOWN — ${verdict.reason}`;
   if (!v.length) return '\nTiming: CLEAN — no violations';
 
   const out = [``, `Timing: ${v.length} VIOLATION${v.length === 1 ? '' : 'S'}`];

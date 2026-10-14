@@ -117,14 +117,43 @@ export const Violation = z.object({
   detail: z.string(),
 });
 
+export const CheckStatus = z
+  .enum(['pass', 'fail', 'unknown'])
+  .describe('unknown = timing could not be verified; never a pass.');
+
 export const BuildSummary = z.object({
   build: BuildInfo,
   resources: Headline,
   timing: z.object({
+    status: CheckStatus,
+    reason: z.string(),
     fmax: z.array(ClockFmax),
     violations: z.array(Violation),
   }),
-  clean: z.boolean(),
+  status: CheckStatus,
+  clean: z.boolean().describe('True only when status is pass.'),
+});
+
+export const ThresholdFailure = z.object({
+  kind: z.enum(['utilization', 'fmaxMargin']),
+  name: z.string(),
+  value: z.number(),
+  limit: z.number(),
+  detail: z.string(),
+});
+
+export const CheckResult = z.object({
+  status: CheckStatus,
+  ok: z.boolean().describe('The CI decision. False for fail, and for unknown unless failOnMissingTiming is false.'),
+  reasons: z.array(z.string()),
+  violations: z.array(Violation),
+  timing: z.object({ status: CheckStatus, reason: z.string() }),
+  thresholds: z.object({
+    maxUtilization: z.number().optional(),
+    minFmaxMarginMhz: z.number().optional(),
+    failOnMissingTiming: z.boolean(),
+  }),
+  thresholdFailures: z.array(ThresholdFailure),
 });
 
 export const FoundBuild = z.object({

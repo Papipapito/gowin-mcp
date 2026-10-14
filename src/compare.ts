@@ -1,4 +1,4 @@
-import { findViolations } from './analyze.js';
+import { findViolations, timingVerdict } from './analyze.js';
 import type { LoadedBuild } from './analyze.js';
 import type { ResourceRow, Violation } from './types.js';
 
@@ -72,8 +72,14 @@ export function compareBuilds(before: LoadedBuild, after: LoadedBuild): BuildDif
       `Different tool versions (${bTool} vs ${aTool}) — some drift is the toolchain, not your RTL.`,
     );
   }
-  if (!before.timing || !after.timing) {
-    notes.push('At least one build has no timing report; only resources were compared.');
+  for (const [label, side] of [
+    ['before', before],
+    ['after', after],
+  ] as const) {
+    const v = timingVerdict(side.timing);
+    if (v.status === 'unknown') {
+      notes.push(`Timing of the "${label}" build is unknown (${v.reason}); only resources were compared for it.`);
+    }
   }
 
   // --- resources -----------------------------------------------------------

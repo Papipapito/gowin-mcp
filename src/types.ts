@@ -111,12 +111,59 @@ export interface Violation {
   detail: string;
 }
 
+/**
+ * pass: a timing report was read and shows no violation.
+ * fail: at least one violation (or, in gowin_check, a threshold breach).
+ * unknown: timing could not be verified — missing report, unrecognised
+ *          layout, or no clocks analysed. Never equivalent to pass.
+ */
+export type CheckStatus = 'pass' | 'fail' | 'unknown';
+
+export interface TimingVerdict {
+  status: CheckStatus;
+  reason: string;
+  violations: Violation[];
+}
+
 export interface BuildSummary {
   build: BuildInfo;
   resources: ResourceReport['headline'];
   timing: {
+    status: CheckStatus;
+    reason: string;
     fmax: ClockFmax[];
     violations: Violation[];
   };
+  status: CheckStatus;
+  /** True only when status is pass. Kept for callers of the 0.1 shape. */
   clean: boolean;
+}
+
+export interface CheckThresholds {
+  /** Fail when CLS, Logic or BSRAM utilization exceeds this percentage. */
+  maxUtilization?: number;
+  /** Fail when any clock's achieved-minus-constraint margin is below this many MHz. */
+  minFmaxMarginMhz?: number;
+  /** Default true: an unknown timing status fails the gate. */
+  failOnMissingTiming?: boolean;
+}
+
+export interface ThresholdFailure {
+  kind: 'utilization' | 'fmaxMargin';
+  name: string;
+  value: number;
+  limit: number;
+  detail: string;
+}
+
+export interface CheckResult {
+  status: CheckStatus;
+  /** The CI decision: accept the build or not. */
+  ok: boolean;
+  reasons: string[];
+  violations: Violation[];
+  timing: { status: CheckStatus; reason: string };
+  thresholds: Required<Pick<CheckThresholds, 'failOnMissingTiming'>> &
+    Pick<CheckThresholds, 'maxUtilization' | 'minFmaxMarginMhz'>;
+  thresholdFailures: ThresholdFailure[];
 }

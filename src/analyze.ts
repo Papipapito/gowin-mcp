@@ -3,9 +3,15 @@ import { parseTimingReport } from './parse-timing.js';
 import type { FoundBuild } from './discover.js';
 import type {
   BuildSummary,
+  CheckResult,
+  CheckStatus,
+  CheckThresholds,
   ClockFmax,
   ResourceReport,
+  ResourceRow,
+  ThresholdFailure,
   TimingReport,
+  TimingVerdict,
   Violation,
 } from './types.js';
 
@@ -71,6 +77,47 @@ export function findViolations(timing: TimingReport | undefined): Violation[] {
   return out;
 }
 
+/**
+ * What the timing report lets us say about the build.
+ *
+ * "No violations found" is only meaningful when a report was actually read
+ * and understood. A missing `_tr_content.html`, a layout the parser does not
+ * recognise, or a report with no clocks in it at all (nothing constrained)
+ * are all `unknown`: never treat them as a pass.
+ */
+export function timingVerdict(timing: TimingReport | undefined): TimingVerdict {
+  if (!timing) {
+    return {
+      status: 'unknown',
+      reason: 'no timing report (_tr_content.html is missing — the timing engine did not run)',
+      violations: [],
+    };
+  }
+  if (!timing.recognized) {
+    return {
+      status: 'unknown',
+      reason: 'timing report format not recognised (no fMax or TNS summary table found)',
+      violations: [],
+    };
+  }
+  if (!timing.fmax.length && !timing.tns.length) {
+    return {
+      status: 'unknown',
+      reason: 'timing report lists no clocks — nothing was constrained, so nothing was analysed',
+      violations: [],
+    };
+  }
+  const violations = findViolations(timing);
+  if (violations.length) {
+    return {
+      status: 'fail',
+      reason: `${violations.length} timing violation${violations.length === 1 ? '' : 's'}`,
+      violations,
+    };
+  }
+  return { status: 'pass', reason: 'no timing violations', violations };
+}
+
 /** Attaches the worst offending path to each setup/hold violation, when known. */
 export function explainViolation(
   v: Violation,
@@ -86,15 +133,113 @@ export function explainViolation(
 }
 
 export function summarize(loaded: LoadedBuild): BuildSummary {
-  const violations = findViolations(loaded.timing);
+  const verdict = timingVerdict(loaded.timing);
   return {
     build: loaded.resources.build,
     resources: loaded.resources.headline,
     timing: {
+      status: verdict.status,
+      reason: verdict.reason,
       fmax: loaded.timing?.fmax ?? [],
-      violations,
+      violations: verdict.violations,
     },
-    clean: violations.length === 0,
+    status: verdict.status,
+    clean: verdict.status === 'pass',
+  };
+}
+
+/** Utilization as a number 0-100, from the tool's own "66%" cell or recomputed. */
+export function utilizationPct(row: ResourceRow | undefined): number | undefined {
+  if (!row) return undefined;
+  const m = row.utilization?.match(/-?\d+(?:\.\d+)?/);
+  if (m) return Number(m[0]);
+  if (row.used != null && row.available) return Number(((row.used / row.available) * 100).toFixed(2));
+  return undefined;
+}
+
+/**
+ * CI gate: timing verdict plus optional resource and margin thresholds.
+ *
+ * `status` is what we know: pass, fail, or unknown (timing could not be
+ * verified). `ok` is the decision a pipeline should act on — unknown counts as
+ * a failure unless `failOnMissingTiming` is turned off, in which case a build
+ * whose resources are within limits is accepted on resources alone.
+ */
+export function checkBuild(loaded: LoadedBuild, thresholds: CheckThresholds = {}): CheckResult {
+  const failOnMissingTiming = thresholds.failOnMissingTiming ?? true;
+  const verdict = timingVerdict(loaded.timing);
+  const reasons: string[] = [];
+  const thresholdFailures: ThresholdFailure[] = [];
+
+  if (verdict.status === 'fail') reasons.push(verdict.reason);
+
+  if (thresholds.maxUtilization != null) {
+    const h = loaded.resources.headline;
+    for (const [label, row] of [
+      ['CLS', h.cls],
+      ['Logic', h.logic],
+      ['BSRAM', h.bsram],
+    ] as const) {
+      const pct = utilizationPct(row);
+      if (pct == null || pct <= thresholds.maxUtilization) continue;
+      thresholdFailures.push({
+        kind: 'utilization',
+        name: label,
+        value: pct,
+        limit: thresholds.maxUtilization,
+        detail: `${label} at ${pct}% exceeds maxUtilization ${thresholds.maxUtilization}%`,
+      });
+    }
+  }
+
+  if (thresholds.minFmaxMarginMhz != null && loaded.timing) {
+    for (const f of loaded.timing.fmax) {
+      if (f.marginMhz >= thresholds.minFmaxMarginMhz) continue;
+      // A clock already failing its constraint is reported as a violation;
+      // the margin threshold adds the ones that pass but too narrowly.
+      if (f.failing && verdict.violations.some((v) => v.clock === f.clock)) continue;
+      thresholdFailures.push({
+        kind: 'fmaxMargin',
+        name: f.clock,
+        value: f.marginMhz,
+        limit: thresholds.minFmaxMarginMhz,
+        detail: `${f.clock} margin ${f.marginMhz} MHz is below minFmaxMarginMhz ${thresholds.minFmaxMarginMhz} (${f.actualMhz} vs ${f.constraintMhz} MHz)`,
+      });
+    }
+  }
+  for (const t of thresholdFailures) reasons.push(t.detail);
+
+  let status: CheckStatus;
+  if (reasons.length) status = 'fail';
+  else if (verdict.status === 'unknown') status = 'unknown';
+  else status = 'pass';
+
+  if (verdict.status === 'unknown') {
+    // Always on record, even when a threshold already failed the build:
+    // the reader must not infer that timing was checked.
+    let note = `timing not verified: ${verdict.reason}`;
+    if (status === 'unknown') {
+      note += failOnMissingTiming
+        ? ' — treated as a failure (failOnMissingTiming=true)'
+        : ' — accepted on resources alone (failOnMissingTiming=false)';
+    }
+    reasons.push(note);
+  } else if (status === 'pass') {
+    reasons.push(verdict.reason);
+  }
+
+  return {
+    status,
+    ok: status === 'pass' || (status === 'unknown' && !failOnMissingTiming),
+    reasons,
+    violations: verdict.violations,
+    timing: { status: verdict.status, reason: verdict.reason },
+    thresholds: {
+      maxUtilization: thresholds.maxUtilization,
+      minFmaxMarginMhz: thresholds.minFmaxMarginMhz,
+      failOnMissingTiming,
+    },
+    thresholdFailures,
   };
 }
 

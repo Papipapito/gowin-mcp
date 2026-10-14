@@ -4,7 +4,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 
 import { discoverBuilds, resolveBuild } from './discover.js';
-import { findViolations, loadBuild, summarize } from './analyze.js';
+import { checkBuild, loadBuild, summarize } from './analyze.js';
 import { readBuildHeader } from './parse-resources.js';
 import type { LoadedBuild } from './analyze.js';
 import { compareBuilds } from './compare.js';
@@ -194,20 +194,44 @@ export function createServer(): McpServer {
   server.registerTool(
     'gowin_check',
     {
-      title: 'Timing gate',
+      title: 'Build gate',
       description:
-        'Pass/fail gate. Returns only the timing violations, with the offending path for each. Empty means the build closed timing.',
-      inputSchema: { path: S.PathArg, name: S.NameArg, format: S.FormatArg },
-      outputSchema: { clean: z.boolean(), violations: z.array(S.Violation) },
+        'Pass/fail/unknown gate for CI. Lists timing violations with the offending path for each, plus optional thresholds on utilization and fMax margin. "unknown" means timing could not be verified (no _tr_content.html, unrecognised report, or no clocks analysed) and is never a pass.',
+      inputSchema: {
+        path: S.PathArg,
+        name: S.NameArg,
+        format: S.FormatArg,
+        maxUtilization: z
+          .number()
+          .min(0)
+          .max(100)
+          .optional()
+          .describe('Fail when CLS, Logic or BSRAM utilization exceeds this percentage.'),
+        minFmaxMarginMhz: z
+          .number()
+          .optional()
+          .describe('Fail when any clock achieves less than constraint + this many MHz.'),
+        failOnMissingTiming: z
+          .boolean()
+          .optional()
+          .describe('Default true: an unknown timing status fails the gate. Set false to accept on resources alone.'),
+      },
+      outputSchema: S.CheckResult.shape,
       annotations: READ_ONLY,
     },
-    guarded(({ path, name, format }) => {
+    guarded(({ path, name, format, maxUtilization, minFmaxMarginMhz, failOnMissingTiming }) => {
       const b = must(path, name);
-      const v = findViolations(b.timing);
-      const text = v.length
-        ? `FAIL — ${v.length} violation(s)${renderViolations(b)}`
-        : 'PASS — no timing violations.';
-      return result({ clean: v.length === 0, violations: v }, text, format);
+      const r = checkBuild(b, { maxUtilization, minFmaxMarginMhz, failOnMissingTiming });
+      const head = `${r.status.toUpperCase()} — ${r.reasons[0]}`;
+      const lines = [head];
+      if (r.status === 'unknown' && r.ok) lines.push('ok=true (gate accepted the build on resources)');
+      if (r.status === 'fail') {
+        if (r.violations.length) lines.push(renderViolations(b));
+        for (const t of r.thresholdFailures) lines.push(`  threshold ${t.kind.padEnd(11)} ${t.detail}`);
+        if (r.timing.status === 'unknown') lines.push(`  note: ${r.reasons[r.reasons.length - 1]}`);
+      }
+      if (b.found.siblings?.length) lines.push(buildHeader(b).find((l) => l.startsWith('Note:')) ?? '');
+      return result(r, lines.filter(Boolean).join('\n'), format);
     }),
   );
 
