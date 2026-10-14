@@ -1,7 +1,7 @@
 import { explainViolation, formatFmax, formatResource, timingVerdict } from './analyze.js';
 import type { LoadedBuild } from './analyze.js';
 import type { BuildDiff } from './compare.js';
-import type { PackagePin, PinReport, PortPin, TimingPath } from './types.js';
+import type { PackagePin, PinReport, PortPin, TimingPath, WarningGroup, WarningsReport } from './types.js';
 
 /** Compact text renderings shared by the tools. JSON output bypasses these. */
 
@@ -184,6 +184,31 @@ export function renderPins(
     out.push('', 'Global clock routing');
     for (const c of r.clocks) {
       out.push(`  ${c.signal.padEnd(40)} ${c.type.padEnd(8)} ${c.location ?? ''}`);
+    }
+  }
+  return out.join('\n');
+}
+
+export function renderWarnings(r: WarningsReport, groups: WarningGroup[], buildName: string): string {
+  const t = r.totals;
+  const out = [
+    `${buildName}: ${t.errors} error${t.errors === 1 ? '' : 's'}, ${t.warnings} warning${t.warnings === 1 ? '' : 's'} (synthesis ${t.synthesis}, pnr ${t.pnr})`,
+  ];
+  for (const n of r.notes) out.push(`  ! ${n}`);
+  for (const g of groups) {
+    const where = g.locations.length
+      ? `  @ ${g.locations.slice(0, 3).join(', ')}${g.locations.length > 3 ? ` +${g.locations.length - 3} more` : ''}`
+      : '';
+    out.push(`  ${g.level.padEnd(5)} ${g.code} x${String(g.count).padEnd(4)} [${g.stage}] ${g.examples[0]}${where}`);
+    if (g.hint) out.push(`        -> ${g.hint}`);
+  }
+  if (groups.length < r.groups.length) {
+    out.push(`  (${r.groups.length - groups.length} more code(s) not shown)`);
+  }
+  if (r.unconstrainedClocks.length) {
+    out.push('', 'Clocks without a constraint (TA1132)');
+    for (const c of r.unconstrainedClocks) {
+      out.push(`  ${c.clock}${c.noTimingPaths ? '   <- also "no timing paths" in the timing report' : ''}`);
     }
   }
   return out.join('\n');

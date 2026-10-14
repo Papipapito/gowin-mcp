@@ -255,3 +255,30 @@ export const PinReport = z.object({
   packagePins: z.array(PackagePin),
   unusedPins: z.number(),
 });
+
+export const LogLevel = z.enum(['WARN', 'ERROR', 'INFO']);
+export const LogStage = z.enum(['synthesis', 'pnr']);
+
+export const WarningGroup = z.object({
+  code: z.string(),
+  level: LogLevel,
+  stage: LogStage,
+  count: z.number(),
+  pattern: z.string(),
+  hint: z.string().optional(),
+  examples: z.array(z.string()),
+  locations: z.array(z.string()),
+});
+
+export const WarningsReport = z.object({
+  logs: z.object({ pnr: z.string().optional(), synthesis: z.string().optional() }),
+  totals: z.object({
+    errors: z.number(),
+    warnings: z.number(),
+    pnr: z.number(),
+    synthesis: z.number(),
+  }),
+  groups: z.array(WarningGroup),
+  unconstrainedClocks: z.array(z.object({ clock: z.string(), noTimingPaths: z.boolean() })),
+  notes: z.array(z.string()),
+});

@@ -221,3 +221,43 @@ export interface PinReport {
   packagePins: PackagePin[];
   unusedPins: number;
 }
+
+export type LogStage = 'synthesis' | 'pnr';
+
+export interface LogMessage {
+  level: 'WARN' | 'ERROR' | 'INFO';
+  /** Gowin diagnostic code, e.g. TA1132, EX2478. */
+  code: string;
+  message: string;
+  file?: string;
+  line?: number;
+  stage: LogStage;
+}
+
+/** Every occurrence of one code in one log, collapsed. */
+export interface WarningGroup {
+  code: string;
+  level: LogMessage['level'];
+  stage: LogStage;
+  count: number;
+  /** The message with quoted names and numbers replaced, shared by the group. */
+  pattern: string;
+  /** What the code means and how to act on it, when known. */
+  hint?: string;
+  /** Up to three verbatim messages. */
+  examples: string[];
+  /** Up to twenty distinct "dir/file.sv:line" locations. */
+  locations: string[];
+}
+
+export interface WarningsReport {
+  logs: { pnr?: string; synthesis?: string };
+  totals: { errors: number; warnings: number; pnr: number; synthesis: number };
+  groups: WarningGroup[];
+  /**
+   * Nets the timing engine treated as clocks without a constraint (TA1132),
+   * flagged when the timing report also lists them under "no timing paths".
+   */
+  unconstrainedClocks: { clock: string; noTimingPaths: boolean }[];
+  notes: string[];
+}

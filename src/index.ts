@@ -7,6 +7,7 @@ import { discoverBuilds, resolveBuild } from './discover.js';
 import { checkBuild, loadBuild, summarize } from './analyze.js';
 import { readBuildHeader } from './parse-resources.js';
 import { parsePinReport, portMatcher } from './parse-pins.js';
+import { readWarnings } from './parse-log.js';
 import type { LoadedBuild } from './analyze.js';
 import { compareBuilds } from './compare.js';
 import * as S from './schemas.js';
@@ -17,6 +18,7 @@ import {
   renderPathSummary,
   renderPathTable,
   renderPins,
+  renderWarnings,
   renderResources,
   renderViolations,
 } from './render.js';
@@ -300,6 +302,41 @@ export function createServer(): McpServer {
         packagePins: includeUnused ? r.packagePins : r.packagePins.filter((p) => p.signal && match(p.signal)),
         clocks: includeClocks !== false ? r.clocks : [],
       };
+      return result(structured, text, format);
+    }),
+  );
+
+  server.registerTool(
+    'gowin_warnings',
+    {
+      title: 'Synthesis and PnR warnings',
+      description:
+        'WARN/ERROR lines from impl/gwsynthesis/<name>.log and impl/pnr/<name>.log grouped by diagnostic code, with a hint for the common ones. Cross-checks TA1132 (clock detected but not created) against the timing report to list clocks that are missing a constraint.',
+      inputSchema: {
+        path: S.PathArg,
+        name: S.NameArg,
+        format: S.FormatArg,
+        stage: z.enum(['synthesis', 'pnr', 'all']).optional().describe('Which log to read. Default all.'),
+        level: z.enum(['error', 'warn', 'all']).optional().describe('Minimum severity. Default all.'),
+        code: z.string().optional().describe('Only this diagnostic code, e.g. TA1132.'),
+        maxGroups: z.number().optional().describe('Codes to show in the text rendering, default 15.'),
+      },
+      outputSchema: S.WarningsReport.shape,
+      annotations: READ_ONLY,
+    },
+    guarded(({ path, name, format, stage, level, code, maxGroups }) => {
+      const found = resolveBuild(path, name);
+      if (!found) throw new Error(`No Gowin build found at ${path}.`);
+      const b = loadBuild(found);
+      const r = readWarnings(found, b.timing?.clocksWithoutPaths);
+      const filtered = r.groups.filter(
+        (g) =>
+          (!stage || stage === 'all' || g.stage === stage) &&
+          (!level || level === 'all' || (level === 'error' ? g.level === 'ERROR' : g.level !== 'INFO')) &&
+          (!code || g.code.toLowerCase() === code.toLowerCase()),
+      );
+      const structured = { ...r, groups: filtered };
+      const text = renderWarnings(structured, filtered.slice(0, maxGroups ?? 15), found.name);
       return result(structured, text, format);
     }),
   );
