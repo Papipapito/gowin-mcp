@@ -139,28 +139,64 @@ function parsePaths(rows: string[][]): TimingPath[] {
   return out;
 }
 
-export function parseTimingReport(trContentPath: string): TimingReport {
-  const html = readFileSync(trContentPath, 'utf8');
-  const tables = extractTables(html);
+type PathKind = 'setup' | 'hold' | 'recovery' | 'removal';
 
-  // Setup and hold path tables share an identical header, so they are told
-  // apart by document position relative to the "Hold Paths" heading.
+/**
+ * Every "<h2>/<h3>" heading with its document offset. The four path tables
+ * share one column layout, so the only thing that tells them apart is the
+ * heading immediately above each: "Setup Paths Table", "Hold Paths Table",
+ * "Recovery Paths Table", "Removal Paths Table".
+ */
+function headings(html: string): { offset: number; text: string }[] {
+  const out: { offset: number; text: string }[] = [];
+  for (const m of html.matchAll(/<h[23]\b[^>]*>([\s\S]*?)<\/h[23]>/gi)) {
+    out.push({ offset: m.index ?? 0, text: cellText(m[1]) });
+  }
+  return out;
+}
+
+function pathKindFor(heading: string | undefined): PathKind | undefined {
+  const m = heading?.match(/\b(Setup|Hold|Recovery|Removal)\s+Paths\s+Table/i);
+  return m ? (m[1].toLowerCase() as PathKind) : undefined;
+}
+
+export function parseTimingHtml(html: string): TimingReport {
+  const tables = extractTables(html);
+  const heads = headings(html);
+  // Legacy fallback for a report with no section headings at all: anything
+  // past the "Hold Paths" marker is hold, everything before it is setup.
   const holdMarker = html.search(/Hold\s+Paths\s+Table/i);
 
   let fmax: ClockFmax[] = [];
   let tns: TnsRow[] = [];
-  let setupPaths: TimingPath[] = [];
-  let holdPaths: TimingPath[] = [];
+  let fmaxTableSeen = false;
+  let tnsTableSeen = false;
+  const paths: Record<PathKind, TimingPath[]> = {
+    setup: [],
+    hold: [],
+    recovery: [],
+    removal: [],
+  };
 
+  let h = 0;
   for (const t of tables) {
     if (headerHas(t.rows, 'Clock Name', 'Actual Fmax')) {
+      fmaxTableSeen = true;
       fmax = fmax.concat(parseFmax(t.rows));
     } else if (headerHas(t.rows, 'Analysis Type', 'TNS')) {
+      tnsTableSeen = true;
       tns = tns.concat(parseTns(t.rows));
     } else if (headerHas(t.rows, 'Path Slack', 'From Node')) {
-      const paths = parsePaths(t.rows);
-      if (holdMarker >= 0 && t.offset > holdMarker) holdPaths = holdPaths.concat(paths);
-      else setupPaths = setupPaths.concat(paths);
+      // Nearest heading above this table. Tables are in document order, so
+      // the heading cursor only ever moves forward.
+      while (h < heads.length && heads[h].offset < t.offset) h++;
+      const above = h > 0 ? heads[h - 1].text : undefined;
+      let kind = pathKindFor(above);
+      if (!kind && !heads.length) kind = holdMarker >= 0 && t.offset > holdMarker ? 'hold' : 'setup';
+      // A path-shaped table under some other heading (e.g. the per-exception
+      // report) is not one of the four summaries; leave it out rather than
+      // guess.
+      if (kind) paths[kind] = paths[kind].concat(parsePaths(t.rows));
     }
   }
 
@@ -168,5 +204,18 @@ export function parseTimingReport(trContentPath: string): TimingReport {
     ...html.matchAll(/No timing paths to get frequency of ([^!<]+)!/g),
   ].map((m) => decode(m[1]).trim());
 
-  return { fmax, clocksWithoutPaths, tns, setupPaths, holdPaths };
+  return {
+    fmax,
+    clocksWithoutPaths,
+    tns,
+    setupPaths: paths.setup,
+    holdPaths: paths.hold,
+    recoveryPaths: paths.recovery,
+    removalPaths: paths.removal,
+    recognized: fmaxTableSeen || tnsTableSeen,
+  };
+}
+
+export function parseTimingReport(trContentPath: string): TimingReport {
+  return parseTimingHtml(readFileSync(trContentPath, 'utf8'));
 }

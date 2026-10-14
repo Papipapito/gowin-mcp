@@ -98,6 +98,16 @@ export function renderPathTable(label: string, paths: TimingPath[], max: number)
   return out;
 }
 
+/** One line per async-reset check: these rarely fail, so a count and the worst slack is enough. */
+export function renderPathSummary(label: string, paths: TimingPath[]): string[] {
+  if (!paths.length) return [];
+  const worst = [...paths].sort((x, y) => x.slack - y.slack)[0];
+  const failing = paths.filter((p) => p.slack < 0).length;
+  return [
+    `${label}: ${paths.length} paths, worst ${worst.slack} ns (${worst.fromClock}->${worst.toClock})${failing ? `, ${failing} NEGATIVE` : ''}`,
+  ];
+}
+
 export function renderDiff(diff: BuildDiff): string {
   const out: string[] = [];
   out.push(`${diff.before.name} (${diff.before.createdTime ?? '?'})`);

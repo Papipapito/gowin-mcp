@@ -13,6 +13,7 @@ import {
   buildHeader,
   renderDiff,
   renderFmax,
+  renderPathSummary,
   renderPathTable,
   renderResources,
   renderViolations,
@@ -162,7 +163,7 @@ export function createServer(): McpServer {
     {
       title: 'Timing detail',
       description:
-        'Timing detail for one build: fMax per clock, total negative slack, and the worst setup/hold paths with their endpoints.',
+        'Timing detail for one build: fMax per clock, total negative slack, the worst setup/hold paths with their endpoints, and a summary of the recovery/removal checks.',
       inputSchema: {
         path: S.PathArg,
         name: S.NameArg,
@@ -181,6 +182,11 @@ export function createServer(): McpServer {
       const out = [buildHeader(b).join('\n'), renderFmax(b), renderViolations(b)];
       out.push(...renderPathTable('Worst setup paths', b.timing.setupPaths, max));
       out.push(...renderPathTable('Worst hold paths', b.timing.holdPaths, max));
+      const async = [
+        ...renderPathSummary('Recovery', b.timing.recoveryPaths),
+        ...renderPathSummary('Removal', b.timing.removalPaths),
+      ];
+      if (async.length) out.push('', ...async);
       return result({ hasTiming: true, timing: b.timing }, out.filter(Boolean).join('\n'), format);
     }),
   );

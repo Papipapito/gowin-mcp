@@ -90,6 +90,16 @@ export interface TimingReport {
   tns: TnsRow[];
   setupPaths: TimingPath[];
   holdPaths: TimingPath[];
+  /** Asynchronous set/reset release checks (report_timing -recovery). */
+  recoveryPaths: TimingPath[];
+  /** Asynchronous set/reset hold-side checks (report_timing -removal). */
+  removalPaths: TimingPath[];
+  /**
+   * False when the file was there but neither the fMax nor the TNS summary
+   * table was found — a format this parser does not understand. Nothing can
+   * be concluded about timing in that case.
+   */
+  recognized: boolean;
 }
 
 export interface Violation {

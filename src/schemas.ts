@@ -104,6 +104,9 @@ export const TimingReport = z.object({
   tns: z.array(TnsRow),
   setupPaths: z.array(TimingPath),
   holdPaths: z.array(TimingPath),
+  recoveryPaths: z.array(TimingPath),
+  removalPaths: z.array(TimingPath),
+  recognized: z.boolean(),
 });
 
 export const Violation = z.object({
