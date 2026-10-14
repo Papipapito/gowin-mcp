@@ -227,4 +227,10 @@ node tests/stdio.mjs <path-to-a-real-build>   # drive the server over stdio
 
 ## License
 
-MIT
+GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later). See [LICENSE](LICENSE).
+
+You can use it freely, including at work. If you distribute a modified version, or offer
+it to others as a service, you must publish your changes under the same license.
+
+Releases up to and including 0.2.0 were published under the MIT License and remain
+available under those terms.
