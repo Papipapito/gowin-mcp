@@ -208,7 +208,7 @@ Pins, filtered with a glob:
 | `impl/pnr/<name>.fs` | Bitstream header (tool version, device, CheckSum, UserCode, Created Time) and a SHA-256 of the body without the `//` header |
 | `impl/pnr/<name>.log` | PnR warnings and errors (TA*, PR*, CT* codes) |
 | `impl/gwsynthesis/<name>.log` | Synthesis warnings and errors (EX*, NL*, DI*, CV* codes) |
-| the `.sdc` named in the report | Clocks, `set_multicycle_path`, `set_false_path`, `set_clock_groups` — only to explain an fMax shortfall; found at the reported path or by file name under the project |
+| the `.sdc` named in the report | Clocks, `set_multicycle_path`, `set_false_path`, `set_clock_groups` — only to explain an fMax shortfall; found at the reported path or by file name under the project. A header of `---` means the build has none. |
 
 `<name>.tr.html` is only a ~350-byte frameset wrapper — the data is in the
 `_tr_content` sibling.
@@ -228,7 +228,8 @@ long builds through a tool call hides their output. Keep building with `gw_sh`,
 
 ## Verified against
 
-The parsers were run over 154 real builds (October 2026) with no parse failures:
+The parsers were run over 167 real builds (October 2026) with no parse failures, and
+0.2.2 gives the same verdicts and violations as 0.2.1 on every one of them:
 
 | | Verified |
 |---|---|
@@ -319,7 +320,7 @@ does not cover the domain. A TNS violation on the same clock is never waived.
 
 ```bash
 npm run build      # tsc -> dist/
-npm test           # node:test over tests/fixtures (59 tests)
+npm test           # node:test over tests/fixtures (62 tests)
 node tests/stdio.mjs <path-to-a-real-build>   # drive the server over stdio
 node tests/smoke.mjs <path-to-a-real-build>   # parse one build and print what was read
 ```

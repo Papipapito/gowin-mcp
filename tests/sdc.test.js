@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 
-import { clockExceptions, findSdc, parseSdc, readSdc } from '../dist/sdc.js';
+import { clockExceptions, findSdc, namedSdc, parseSdc, readSdc } from '../dist/sdc.js';
 import { DEMO, FMAXONLY } from './helpers.js';
 
 const SDC = join(FMAXONLY, 'constraints', 'fmaxonly.sdc');
@@ -43,4 +43,15 @@ test('findSdc falls back to the file name under the project when the reported pa
   assert.equal(r.reported, 'C:\\work\\demo\\constraints\\demo.sdc');
   assert.equal(r.path, undefined);
   assert.deepEqual(r.clocks, []);
+});
+
+test('"---" in the report header means no .sdc, not a file called ---', () => {
+  assert.equal(namedSdc('---'), undefined);
+  assert.equal(namedSdc('-'), undefined);
+  assert.equal(namedSdc(undefined), undefined);
+  assert.equal(namedSdc('C:\\work\\x.sdc'), 'C:\\work\\x.sdc');
+  const r = readSdc('---', FMAXONLY);
+  assert.equal(r.reported, undefined, 'nothing was named');
+  assert.equal(r.readable, false);
+  assert.equal(r.path, undefined, 'and nothing was searched for');
 });

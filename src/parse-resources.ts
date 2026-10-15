@@ -28,7 +28,8 @@ function parseHeader(text: string, implDir: string, name: string): BuildInfo {
   // Created Time omits the space after the colon, hence \s* rather than \s.
   for (const m of text.matchAll(/^\s*<([^>]+)>:\s*(.+?)\s*$/gm)) {
     const key = HEADER_KEYS[m[1]];
-    if (key) (info as unknown as Record<string, unknown>)[key] = m[2];
+    // "---" is Gowin's "none": a build placed without a .cst or .sdc.
+    if (key && !/^-+$/.test(m[2])) (info as unknown as Record<string, unknown>)[key] = m[2];
   }
 
   const total = text.match(

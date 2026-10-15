@@ -15,6 +15,8 @@ import type { BitstreamInfo } from './types.js';
 
 const HEADER_KEYS: Record<string, keyof BitstreamInfo> = {
   'Tool Version': 'toolVersion',
+  // Releases up to V1.9.9 wrote the version under this key.
+  'GOWIN Version': 'toolVersion',
   Device: 'device',
   'Device Version': 'deviceVersion',
   'Part Number': 'partNumber',

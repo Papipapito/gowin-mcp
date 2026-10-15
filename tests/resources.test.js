@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 import { parseResourceReport, readBuildHeader } from '../dist/parse-resources.js';
 import { DEMO, LEGACY } from './helpers.js';
@@ -19,6 +21,22 @@ test('header: "Tool Version" (new) and "PnR Version" (old) both land in toolVers
   const legacy = parseResourceReport(LEGACY_RPT).build;
   assert.equal(legacy.toolVersion, 'V1.9.9 Beta-4 Education');
   assert.equal(legacy.device, 'GW2AR-18');
+});
+
+test('"---" constraint files in the header come back absent', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'gowin-mcp-rpt-'));
+  const rpt = join(dir, 'none.rpt.txt');
+  writeFileSync(
+    rpt,
+    readFileSync(DEMO_RPT, 'utf8')
+      .replace(/<Timing Constraints File>: .*/, '<Timing Constraints File>: ---')
+      .replace(/<Physical Constraints File>: .*/, '<Physical Constraints File>: ---'),
+  );
+  const b = parseResourceReport(rpt).build;
+  assert.equal(b.sdcFile, undefined);
+  assert.equal(b.constraintsFile, undefined);
+  assert.equal(b.device, 'GW2AR-18', 'the rest of the header is untouched');
+  assert.equal(readBuildHeader(rpt).sdcFile, undefined);
 });
 
 test('readBuildHeader reads the same header without the body', () => {

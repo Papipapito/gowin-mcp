@@ -169,10 +169,12 @@ function fmaxDetail(f: ClockFmax, timing: TimingReport, sdc: SdcInfo | undefined
     );
   }
 
-  const unread =
-    sdc && !sdc.readable
-      ? ` The .sdc${sdc.reported ? ` at ${sdc.reported}` : ''} could not be read, so its exceptions were not checked.`
-      : '';
+  let unread = '';
+  if (sdc && !sdc.readable) {
+    unread = sdc.reported
+      ? ` The .sdc at ${sdc.reported} could not be read, so its exceptions were not checked.`
+      : ' The report names no .sdc (the build was placed without timing constraints), so there are no exceptions to check.';
+  }
   if (evidence.length) {
     s +=
       `. ${evidence.join('; ')}. Gowin derives fMax from the worst path's relation minus its slack as if that were a single period, ` +

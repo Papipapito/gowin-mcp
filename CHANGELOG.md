@@ -76,6 +76,21 @@ constraints). Not published on npm yet.
 - `TimingPath.fromEdge` / `toEdge` from the `clk:[R]` / `clk:[F]` suffixes.
 - `gowin_summary` carries `constraints`: the `.sdc` that was read and how
   many clocks, multicycle, false-path and clock-group commands it declares.
+  A report header of `---` (a build placed without a `.cst` or `.sdc`, 119
+  of 167 local builds) means "none", not a file called `---`: `sdcFile` and
+  `constraintsFile` come back absent and the fMax detail says so.
+- `.fs` files written by releases up to V1.9.9 carry the version under
+  `//GOWIN Version:`; it lands in `bitstream.toolVersion` too.
+
+### Verified
+
+The 0.2.2 parsers were run over every local build (167: the 154 of the
+earlier matrix plus 13 campaign builds, V1.9.8.10 to V1.9.12.03, five
+devices): no exception, and the same 82 pass / 81 fail / 4 unknown and the
+same violations as 0.2.1. The 11 fMax-only violations all have `.sdc`
+evidence. Reading a 20.8 MB `.fs` costs about 24 ms. No local build pairs a
+`.tr` with the HTML of the same run, so the `.tr` fallback is covered by the
+three MoonTANG builds compared by hand and by the `trtext` fixture.
 
 ### Fixtures and tests
 
@@ -84,7 +99,7 @@ constraints). Not published on npm yet.
 - `tests/fixtures/trtext`: a trimmed V1.9.12.04 build whose timing exists
   only as `<name>.tr`.
 - `demo.fs` / `stale.fs` with the same body and different Created Time.
-- 59 tests (was 38), including a check of every tool's JSON against the zod
+- 62 tests (was 38), including a check of every tool's JSON against the zod
   schemas with no undeclared field.
 
 ## 0.2.1 — 14 October 2026

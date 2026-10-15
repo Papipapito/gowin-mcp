@@ -108,7 +108,13 @@ export function findSdc(reported: string | undefined, projectDir: string): strin
   return walkFor(projectDir, base, 3);
 }
 
+/** Gowin writes `---` in the report header when the build has no .sdc. */
+export function namedSdc(reported: string | undefined): string | undefined {
+  return reported && !/^-+$/.test(reported.trim()) ? reported : undefined;
+}
+
 export function readSdc(reported: string | undefined, projectDir: string): SdcInfo {
+  reported = namedSdc(reported);
   const empty: SdcInfo = { reported, readable: false, clocks: [], multicyclePaths: [], falsePaths: [], clockGroups: [] };
   const path = findSdc(reported, projectDir);
   if (!path) return empty;

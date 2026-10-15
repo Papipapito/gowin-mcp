@@ -39,6 +39,18 @@ test('the body hash ignores the // header, so a rebuild with a new Created Time 
   assert.notEqual(a.bodySha256, readBitstream(FMAXONLY_FS).bodySha256, 'one data line differs');
 });
 
+test('releases up to V1.9.9 write the version as GOWIN Version', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'gowin-mcp-fs-'));
+  const old = join(dir, 'old.fs');
+  writeFileSync(
+    old,
+    readFileSync(DEMO_FS, 'utf8').replace('//Tool Version: V1.9.12.03 (64-bit) (86715)', '//GOWIN Version: V1.9.9 Beta-4 Education'),
+  );
+  const b = readBitstream(old);
+  assert.equal(b.toolVersion, 'V1.9.9 Beta-4 Education');
+  assert.equal(b.bodySha256, readBitstream(DEMO_FS).bodySha256);
+});
+
 test('CRLF and LF bodies hash the same', () => {
   const crlf = readFileSync(DEMO_FS, 'utf8');
   assert.ok(crlf.includes('\r\n'), 'the fixture is written with CRLF like the tool does');

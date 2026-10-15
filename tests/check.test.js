@@ -171,6 +171,11 @@ test('an fMax-only violation without .sdc evidence still says to check the const
   assert.match(checkBuild(bare).violations[0].detail, /— check the constraint covers this domain\. The \.sdc at .* could not be read/);
   const silent = { ...b, sdc: { ...b.sdc, multicyclePaths: [], falsePaths: [] }, timing: bare.timing };
   assert.match(checkBuild(silent).violations[0].detail, /names this clock in no multicycle or false-path command\)$/);
+
+  // A build placed without any .sdc (the report says "---"): not "could not be read".
+  const none = { ...bare, sdc: { ...gone.sdc, reported: undefined } };
+  assert.match(checkBuild(none).violations[0].detail, /The report names no \.sdc \(the build was placed without timing constraints\)/);
+  assert.doesNotMatch(checkBuild(none).violations[0].detail, /could not be read/);
 });
 
 test('compareBuilds keys path violations by clock pair: persisting between two copies', () => {
