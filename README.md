@@ -26,7 +26,13 @@ format, so any Gowin EDA project works.
 
 ## Install
 
-Run it straight from the repository (not published on npm yet):
+Run it from npm, with no install step:
+
+```bash
+npx -y gowin-mcp
+```
+
+Or build it from the repository:
 
 ```bash
 git clone https://github.com/Papipapito/gowin-mcp.git
@@ -34,9 +40,6 @@ cd gowin-mcp
 npm install
 npm run build
 ```
-
-Once it is published the same thing will be `npx -y gowin-mcp`; the `bin` entry and
-`prepublishOnly` (build + tests) are already in place for that.
 
 Register it. For Claude Desktop, in `claude_desktop_config.json`:
 

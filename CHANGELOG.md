@@ -1,10 +1,10 @@
 # Changelog
 
-## 0.2.2 — unreleased
+## 0.2.2 — 15 October 2026
 
 Fixes found on 14 October 2026 running 0.2.1 over real builds (Gowin
 V1.9.12.03 and V1.9.12.04 on a GW2AR-18, and a GW5AT-60 build with multicycle
-constraints). Not published on npm yet.
+constraints).
 
 ### Fixed
 
