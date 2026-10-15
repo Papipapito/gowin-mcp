@@ -2,6 +2,8 @@ node_modules/
 dist/
 *.tsbuildinfo
 *.log
+# The anonymised tool logs under tests/fixtures are test data, not build output.
+!tests/fixtures/**/*.log
 .DS_Store
 Thumbs.db
 

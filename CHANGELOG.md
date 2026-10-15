@@ -54,6 +54,11 @@ constraints). Not published on npm yet.
 - **`gowin_pins` with `port` and `includeUnused`.** The package-pin list
   ignored the port filter when `includeUnused` was set. Used pins are now
   filtered by their signal and free pins kept, in both renderings.
+- **Log fixtures were never committed.** `.gitignore` excluded `*.log`, so
+  `tests/fixtures/demo/impl/pnr/demo.log` and
+  `tests/fixtures/demo/impl/gwsynthesis/demo.log` only existed on the
+  machine that made them and a clean clone failed the two warnings tests.
+  Fixture logs are now exempt from the rule and tracked.
 
 ### Added
 

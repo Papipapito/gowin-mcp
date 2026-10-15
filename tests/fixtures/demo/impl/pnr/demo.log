@@ -1,0 +1,36 @@
+Reading netlist file: "C:\work\demo\impl\gwsynthesis\demo.vg"
+Parsing netlist file "C:\work\demo\impl\gwsynthesis\demo.vg" completed
+Processing netlist completed
+Reading constraint file: "C:\work\demo\constraints\demo.cst"
+Physical Constraint parsed completed
+ERROR  (CT1135) : "C:\work\demo\constraints\demo.cst":12 | Can't find object named 'u_top/u_missing'
+Running placement......
+[10%] Placement Phase 0 completed
+[20%] Placement Phase 1 completed
+[30%] Placement Phase 2 completed
+WARN  (TA1132) :  'u_top/u_div5m4/CLKOUT.default_gen_clk' was determined to be a clock but was not created.
+WARN  (TA1132) :  'u_top/u_div27/CLKOUT.default_gen_clk' was determined to be a clock but was not created.
+WARN  (TA1132) :  'u_top/u_divdac/CLKOUT.default_gen_clk' was determined to be a clock but was not created.
+WARN  (TA1117) : Can't calculate clocks' relationship between: "u_top/u_divdac/CLKOUT.default_gen_clk" and "clk_54m"
+WARN  (TA1117) : Can't calculate clocks' relationship between: "clk_54m" and "u_top/u_divdac/CLKOUT.default_gen_clk"
+[50%] Placement Phase 3 completed
+Running routing......
+[60%] Routing Phase 0 completed
+[70%] Routing Phase 1 completed
+[80%] Routing Phase 2 completed
+WARN  (PR1014) : Generic routing resource will be used to clock signal 'CLK_27M_d' by the specified constraint. And then it may lead to the excessive delay or skew
+[90%] Routing Phase 3 completed
+Running timing analysis......
+[95%] Timing analysis completed
+Placement and routing completed
+Bitstream generation in progress......
+Bitstream generation completed
+Running power analysis......
+[100%] Power analysis completed
+Generate file "C:\work\demo\impl\pnr\demo.power.html" completed
+Generate file "C:\work\demo\impl\pnr\demo.pin.html" completed
+Generate file "C:\work\demo\impl\pnr\demo.rpt.html" completed
+Generate file "C:\work\demo\impl\pnr\demo.rpt.txt" completed
+Generate file "C:\work\demo\impl\pnr\demo.tr.html" completed
+Wed Oct 14 19:22:55 2026
+
